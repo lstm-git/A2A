@@ -170,6 +170,47 @@ main { padding: 1.75rem 1rem; }
 .chip .x { color: #94a3b8; cursor: default; }
 .chip-input::placeholder { color: #94a3b8; }
 
+/* People picker */
+.picker { position: relative; }
+.picker-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.picker-item {
+  display: flex;
+  flex-direction: column;
+  padding: .45rem .65rem;
+  cursor: pointer;
+}
+.picker-item:hover { background: var(--teal-soft); }
+.pi-name { font-weight: 600; font-size: .9rem; }
+.pi-email { font-size: .8rem; color: var(--muted); }
+.picker-msg { padding: .55rem .65rem; color: var(--muted); font-size: .85rem; }
+.picker-chip {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: .35rem .45rem;
+  background: #f8fafc;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+}
+.picker-chip .x { cursor: pointer; }
+
+.field-error {
+  margin-top: .35rem;
+  color: var(--req);
+  font-size: .82rem;
+}
+
 /* Tooltip help icon */
 .help {
   display: inline-flex;

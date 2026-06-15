@@ -20,17 +20,26 @@ class Step:
 PURPOSE_CHOICES = ["New Position", "Replacement", "Extension", "Consultancy"]
 DECISION_CHOICES = ["Approve", "Reject", "Refer back"]
 
-# Placeholder list — replace with the real LSTM departments.
 DEPARTMENTS = [
     "",
     "Clinical Sciences",
-    "Parasitology",
-    "Vector Biology",
-    "International Public Health",
-    "Tropical Disease Biology",
-    "Professional Services",
-    "Finance",
+    "External Relations",
+    "Education",
+    "Enterprise and Innovation",
+    "Estates",
+    "Financial Services",
     "Human Resources",
+    "Health and Safety",
+    "Legal and Governance",
+    "International Public Health",
+    "IT Services",
+    "Vice-Chancellor's Office",
+    "Research Services",
+    "Research and Education Facilities",
+    "Strategic Planning",
+    "COO's Office",
+    "Tropical Disease Biology",
+    "Vector Biology",
 ]
 
 
@@ -76,7 +85,9 @@ STEPS.append(Step(
          "type": "text", "required": True},
         {"name": "line_manager", "label": "Line Manager", "type": "user",
          "required": True, "placeholder": "Enter user names, email addresses…",
-         "help": "Enter the line manager who provides first-line approval."},
+         "validate": "entra_user",
+         "help": "Start typing a name or email and pick the line manager from "
+                 "the directory. Must be a valid user in the tenant."},
     ],
 ))
 

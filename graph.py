@@ -1,0 +1,113 @@
+"""Microsoft Graph helper — app-only (client credentials) access to Entra ID.
+
+Mirrors the OnTrack Room Booking integration (ontrack-api/blueprints/entra.py)
+so the same app registration and credentials work here. Used to power the Line
+Manager people-picker and to validate that an email is a real tenant user.
+
+Config (same names as Room Booking, see .env.example):
+    ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET
+
+If those are not set the helper is "not configured": searches return empty and
+validation is skipped, so the app still runs in development without credentials.
+"""
+import os
+import threading
+import time
+
+import requests
+
+TENANT_ID = os.environ.get("ENTRA_TENANT_ID")
+CLIENT_ID = os.environ.get("ENTRA_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("ENTRA_CLIENT_SECRET")
+
+GRAPH = "https://graph.microsoft.com/v1.0"
+DOMAIN = "@lstmed.ac.uk"
+TIMEOUT = 10
+
+_lock = threading.Lock()
+_token = {"value": None, "expires": 0.0}
+
+
+def is_configured() -> bool:
+    return bool(TENANT_ID and CLIENT_ID and CLIENT_SECRET)
+
+
+def _token_value() -> str:
+    with _lock:
+        if _token["value"] and time.time() < _token["expires"] - 60:
+            return _token["value"]
+        resp = requests.post(
+            f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token",
+            data={
+                "grant_type": "client_credentials",
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "scope": "https://graph.microsoft.com/.default",
+            },
+            timeout=TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        _token["value"] = data["access_token"]
+        _token["expires"] = time.time() + data["expires_in"]
+        return _token["value"]
+
+
+def search_users(query: str, top: int = 8) -> list[dict]:
+    """Return [{name, email}] for tenant users matching name or email.
+
+    Email queries (containing '.' or '@') do a precise startswith on mail and
+    UPN; name queries use Graph word-boundary search. Results are limited to the
+    LSTM domain, as in Room Booking.
+    """
+    q = (query or "").strip()
+    if not is_configured() or len(q) < 2:
+        return []
+
+    token = _token_value()
+    url = f"{GRAPH}/users"
+    q_safe = q.replace("'", "''")
+    select = "displayName,mail,userPrincipalName"
+
+    if "." in q or "@" in q:
+        auth = {"Authorization": f"Bearer {token}"}
+        r1 = requests.get(url, headers=auth, timeout=TIMEOUT, params={
+            "$filter": f"startswith(mail,'{q_safe}')", "$select": select, "$top": "8"})
+        r2 = requests.get(url, headers=auth, timeout=TIMEOUT, params={
+            "$filter": f"startswith(userPrincipalName,'{q_safe}')",
+            "$select": select, "$top": "8"})
+        rows = (r1.json().get("value", []) if r1.ok else []) + \
+               (r2.json().get("value", []) if r2.ok else [])
+    else:
+        r = requests.get(url, timeout=TIMEOUT, params={
+            "$search": f'"displayName:{q_safe}"', "$select": select,
+            "$top": "8", "$count": "true"
+        }, headers={"Authorization": f"Bearer {token}",
+                    "ConsistencyLevel": "eventual"})
+        rows = r.json().get("value", []) if r.ok else []
+
+    seen, users = set(), []
+    for u in rows:
+        upn = u.get("userPrincipalName", "")
+        email = u.get("mail") or upn
+        if not email or not email.lower().endswith(DOMAIN):
+            continue
+        if upn.lower().startswith(q.lower()):
+            email = upn
+        if email.lower() in seen:
+            continue
+        seen.add(email.lower())
+        users.append({"name": u.get("displayName", "") or email, "email": email})
+
+    return users[:top]
+
+
+def user_exists(email: str) -> bool:
+    """True if the email resolves to a user in the tenant."""
+    email = (email or "").strip()
+    if not is_configured() or not email:
+        return False
+    resp = requests.get(
+        f"{GRAPH}/users/{email}",
+        headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
+    return resp.status_code == 200

@@ -109,12 +109,20 @@
 
       <div class="form-row">
         <label>Line Manager <span class="req">*</span>
-          <span class="help" tabindex="0" data-tip="Enter the line manager who provides first-line approval.">i</span>
+          <span class="help" tabindex="0" data-tip="Start typing a name or email and pick the line manager from the directory.">i</span>
         </label>
         <div class="control">
-          <input type="text" name="line_manager" class="chip-input"
-                 placeholder="Enter user names, email addresses…"
-                 value="{{ answers.get('line_manager', '') }}">
+          <div class="picker" data-picker>
+            <input type="text" class="picker-input chip-input" autocomplete="off"
+                   placeholder="Enter user names, email addresses…">
+            <input type="hidden" name="line_manager"
+                   value="{{ answers.get('line_manager', '') }}">
+            <div class="picker-chip" hidden></div>
+            <div class="picker-results" hidden></div>
+          </div>
+          {% if errors.get('line_manager') %}
+            <div class="field-error">{{ errors.line_manager }}</div>
+          {% endif %}
         </div>
       </div>
 

@@ -27,6 +27,28 @@
   guidance grid, payroll tags, banners). Generic step page restyled to match.
 - **Placeholder:** Department list and the help-tooltip wording need the real values.
 
+## 2026-06-15 — Line Manager Entra ID integration
+- **Decision:** type-ahead people picker + app-only (client credentials) Graph auth.
+- Added full department list (18) to the dropdown.
+- `graph.py`: MSAL ConfidentialClientApplication, token cache, `search_users()`
+  and `user_exists()` (Graph `/users`). Reads TENANT_ID/CLIENT_ID/CLIENT_SECRET
+  from env (.env via python-dotenv). Degrades gracefully when unconfigured.
+- `app.py`: `/api/users/search` endpoint for the picker; `validate_step()` blocks
+  submit if a `validate: entra_user` field doesn't resolve in the tenant (skipped
+  when Graph not configured). Errors passed to templates.
+- Line Manager field is now a picker (`static/picker.js`, debounced search, chip
+  selection, manual-entry fallback). CSS added for picker + field errors.
+- New deps: requests, python-dotenv. `.env.example` added.
+
+## 2026-06-15 — Reuse Room Booking Entra setup
+- Aligned with ontrack-api/blueprints/entra.py to reuse the same app registration.
+- `graph.py`: dropped msal; now posts to the token endpoint directly. Env vars
+  renamed to `ENTRA_TENANT_ID/ENTRA_CLIENT_ID/ENTRA_CLIENT_SECRET` (match Room
+  Booking). Ported their tuned search (startswith mail/UPN for emails, $search
+  for names, filtered to @lstmed.ac.uk). `user_exists` via GET /users/{email}.
+- **TODO (you):** copy the three ENTRA_* secret values from the ontrack-api
+  environment on the VM into A2A's `.env`. No new app registration/consent needed.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
