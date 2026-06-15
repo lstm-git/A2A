@@ -58,6 +58,15 @@
 - Added `a2a.service` (systemd, runs as www-data) and `DEPLOY.md`.
 - **TODO:** add reverse-proxy route to 127.0.0.1:8091; install the service.
 
+### Before go-live (REQUIRED)
+- **Reverse proxy:** nginx has no route to A2A yet, so it's not browser-reachable.
+  Must add an nginx config before go-live. Decision pending: own subdomain
+  (e.g. a2a.trackon.lstmed.ac.uk → proxy to 127.0.0.1:8091, no app changes —
+  recommended) vs subpath /a2a/ (needs nginx + Flask prefix-awareness, since A2A
+  is a multi-page UI that generates its own links). Deferred 2026-06-15.
+- **Service / permissions:** install a2a.service and `chown -R www-data` the app
+  dir + venv so the service user can read them (only needed once run as a service).
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
