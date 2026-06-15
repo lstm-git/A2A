@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+{% set purpose_field = step.fields | selectattr('name', 'equalto', 'purpose') | first %}
+{% set dept_field = step.fields | selectattr('name', 'equalto', 'department') | first %}
+
+<div class="page">
+  <section class="card">
+
+    <div class="guidance">
+      <h2 class="guidance-title">Please select the correct choice of A2A request</h2>
+      <div class="guidance-grid">
+
+        <div class="g-item">
+          <h3>New position</h3>
+          <p>Select where the request is for an entirely new role to be created, such as:</p>
+          <ul>
+            <li>a new LSTM role</li>
+            <li>a new agency role</li>
+            <li>a new work placement</li>
+          </ul>
+        </div>
+
+        <div class="g-item">
+          <h3>Replacement</h3>
+          <p>Select where a role already exists but the person occupying that role
+             needs to be replaced — e.g. the previous post-holder has resigned.</p>
+        </div>
+
+        <div class="g-item">
+          <h3>Extension</h3>
+          <p>Select when you wish to request one of the following:</p>
+          <ul>
+            <li>extension of a fixed-term contract</li>
+            <li>extension of an agency contract</li>
+            <li>extension of the funding for an existing permanent contract</li>
+            <li>conversion of an existing fixed-term contract to permanent</li>
+            <li>a change to someone's working hours <strong>without</strong> extending their contract</li>
+          </ul>
+        </div>
+
+        <div class="g-item">
+          <h3>Consultancy</h3>
+          <p>Select if you wish to request one of the following:</p>
+          <ul>
+            <li>a new one-off consultancy (cannot be extended, must move to contingent if extended) <span class="tag on">On payroll</span></li>
+            <li>a contingent worker (holiday pay at 12.07% of hourly rate — see contract guidance) <span class="tag on">On payroll</span></li>
+            <li>a contingent worker extension <span class="tag on">On payroll</span></li>
+            <li>a non-UK consultancy <span class="tag off">Off payroll</span></li>
+            <li>Contract for Services – self-employed (HR will determine IR35 via status determination)</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="banner info">
+      Click the <span class="i-dot">i</span> icon on the <strong>Line Manager</strong>
+      and <strong>Department</strong> questions to view guidance on the appropriate
+      selections for your A2A request.
+    </div>
+
+    <form method="post" class="a2a-form">
+
+      <div class="form-row">
+        <label>Current User <span class="req">*</span></label>
+        <div class="control">
+          <div class="chip-field disabled">
+            <span class="chip">{{ answers.get('current_user') or 'Daniel Williams' }}<span class="x">×</span></span>
+          </div>
+          <input type="hidden" name="current_user"
+                 value="{{ answers.get('current_user') or 'Daniel Williams' }}">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>A2A purpose <span class="req">*</span>
+          <span class="help" tabindex="0" data-tip="{{ purpose_field.help }}">i</span>
+        </label>
+        <div class="control">
+          <select name="purpose" required>
+            <option value="" {{ 'selected' if not answers.get('purpose') }}>— Select —</option>
+            {% for opt in purpose_field.options %}
+              <option value="{{ opt }}" {{ 'selected' if answers.get('purpose') == opt }}>{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Department <span class="req">*</span>
+          <span class="help" tabindex="0" data-tip="{{ dept_field.help }}">i</span>
+        </label>
+        <div class="control">
+          <select name="department" required>
+            {% for opt in dept_field.options %}
+              <option value="{{ opt }}" {{ 'selected' if answers.get('department') == opt }}>{{ opt or '— Select —' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Departmental Group <span class="req">*</span></label>
+        <div class="control">
+          <input type="text" name="departmental_group"
+                 value="{{ answers.get('departmental_group', '') }}">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Line Manager <span class="req">*</span>
+          <span class="help" tabindex="0" data-tip="Enter the line manager who provides first-line approval.">i</span>
+        </label>
+        <div class="control">
+          <input type="text" name="line_manager" class="chip-input"
+                 placeholder="Enter user names, email addresses…"
+                 value="{{ answers.get('line_manager', '') }}">
+        </div>
+      </div>
+
+      <div class="banner note">
+        Forms that haven't been submitted for approval within three months of
+        creation will be deleted.
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="submit">Submit</button>
+        <a class="btn secondary" href="{{ url_for('index') }}">Close</a>
+      </div>
+
+    </form>
+  </section>
+</div>
+{% endblock %}

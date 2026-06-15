@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Summary</h2>
+  <p class="intro">Review of the answers captured for this A2A.</p>
+
+  {% for s in active %}
+    <h3>{{ s.title }}</h3>
+    <dl>
+      {% for f in s.fields %}
+        <dt>{{ f.label }}</dt>
+        <dd>{{ answers.get(f.name, '') or '—' }}</dd>
+      {% endfor %}
+    </dl>
+  {% endfor %}
+
+  <div class="actions">
+    <a class="btn" href="{{ url_for('index') }}">Start new A2A</a>
+  </div>
+</section>
+{% endblock %}
