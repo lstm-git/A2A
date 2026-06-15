@@ -1,0 +1,16 @@
+[Unit]
+Description=A2A Workflow App
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/opt/trackon/A2A
+ExecStart=/opt/trackon/A2A/venv/bin/python app.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=HOST=127.0.0.1
+Environment=PORT=8091
+
+[Install]
+WantedBy=multi-user.target

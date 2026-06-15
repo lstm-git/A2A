@@ -49,6 +49,15 @@
 - **TODO (you):** copy the three ENTRA_* secret values from the ontrack-api
   environment on the VM into A2A's `.env`. No new app registration/consent needed.
 
+## 2026-06-15 — Deployment to VM
+- Cloned to `/opt/trackon/A2A` on the VM (nested repo, mirrors local layout).
+- `.env` created on the VM only (gitignored); ENTRA_* values copied from
+  `/opt/ontrack-api/.env`. Entra people-picker confirmed working live.
+- `app.py` port now configurable via HOST/PORT env (default 127.0.0.1:8091),
+  since 5000 is taken by ontrack-api.
+- Added `a2a.service` (systemd, runs as www-data) and `DEPLOY.md`.
+- **TODO:** add reverse-proxy route to 127.0.0.1:8091; install the service.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
