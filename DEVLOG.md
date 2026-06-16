@@ -100,6 +100,23 @@
   CSS added for `.section-bar`, `.readonly-field`, `.workpattern`, `.attach-placeholder`,
   inline radios. Render verified via Flask test context (no Jinja errors).
 
+## 2026-06-16 — Departmental Group auto-derived from Department
+- Departmental Group is no longer typed — it's derived from the selected Department.
+- Mapping (source of truth in `steps.py` `DEPARTMENT_GROUPS`):
+  - Biological Sciences ← Tropical Disease Biology, Vector Biology
+  - Clinical Sciences and International Public Health ← Clinical Sciences, Intl Public Health
+  - COO's Office ← COO's Office, Estates, Financial Services, Research Services,
+    IT Services, Enterprise and Innovation, Strategic Planning, Legal and Governance,
+    Health and Safety
+  - Professional Services ← External Relations, Vice-Chancellor's Office, Human
+    Resources, Research and Education Facilities
+  - Education ← Education
+- `steps.group_for()` + flattened `DEPARTMENT_TO_GROUP`. All 18 departments covered.
+- **Server-side is authoritative:** `app.py` sets `departmental_group` from `group_for()`
+  on submit of any step containing a `department` field. Field on the form is now a
+  read-only display + hidden input; a small inline script updates it live on dropdown
+  change (map passed to the template via `dept_groups`).
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

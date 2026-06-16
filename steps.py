@@ -42,6 +42,33 @@ DEPARTMENTS = [
     "Vector Biology",
 ]
 
+# Departmental Group is derived from the chosen Department (read-only on the form).
+DEPARTMENT_GROUPS = {
+    "Biological Sciences": [
+        "Tropical Disease Biology", "Vector Biology"],
+    "Clinical Sciences and International Public Health": [
+        "Clinical Sciences", "International Public Health"],
+    "COO's Office": [
+        "COO's Office", "Estates", "Financial Services", "Research Services",
+        "IT Services", "Enterprise and Innovation", "Strategic Planning",
+        "Legal and Governance", "Health and Safety"],
+    "Professional Services": [
+        "External Relations", "Vice-Chancellor's Office", "Human Resources",
+        "Research and Education Facilities"],
+    "Education": ["Education"],
+}
+# Flattened department -> group lookup.
+DEPARTMENT_TO_GROUP = {
+    dept: group
+    for group, depts in DEPARTMENT_GROUPS.items()
+    for dept in depts
+}
+
+
+def group_for(department: str) -> str:
+    """Return the Departmental Group for a department ('' if unknown)."""
+    return DEPARTMENT_TO_GROUP.get(department, "")
+
 
 def approval_fields(prefix: str) -> list:
     """Standard field set for an approval step."""

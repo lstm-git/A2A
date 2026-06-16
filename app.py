@@ -59,6 +59,12 @@ def step(step_id):
                 answers[name] = "on" if request.form.get(name) else ""
             else:
                 answers[name] = request.form.get(name, "")
+
+        # Departmental Group is derived from Department, never typed.
+        if any(f["name"] == "department" for f in current.fields):
+            answers["departmental_group"] = step_engine.group_for(
+                answers.get("department", ""))
+
         session.modified = True
 
         errors = validate_step(current, answers)
@@ -78,7 +84,8 @@ def step(step_id):
     template = custom if os.path.exists(
         os.path.join(app.template_folder, custom)) else "step.html"
     return render_template(template, step=current, answers=answers,
-                           active=active, prev_id=prev_id, errors=errors)
+                           active=active, prev_id=prev_id, errors=errors,
+                           dept_groups=step_engine.DEPARTMENT_TO_GROUP)
 
 
 @app.route("/api/users/search")

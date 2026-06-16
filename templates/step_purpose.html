@@ -102,8 +102,10 @@
       <div class="form-row">
         <label>Departmental Group <span class="req">*</span></label>
         <div class="control">
-          <input type="text" name="departmental_group"
+          <div class="readonly-field" id="dept-group-display">{{ answers.get('departmental_group') or '—' }}</div>
+          <input type="hidden" name="departmental_group" id="dept-group-input"
                  value="{{ answers.get('departmental_group', '') }}">
+          <p class="field-hint">Set automatically from the selected Department.</p>
         </div>
       </div>
 
@@ -139,4 +141,21 @@
     </form>
   </section>
 </div>
+
+<script>
+  // Departmental Group is derived from Department (source map comes from Python).
+  const DEPT_GROUPS = {{ dept_groups | tojson }};
+  const deptSel = document.querySelector('select[name="department"]');
+  const groupDisplay = document.getElementById('dept-group-display');
+  const groupInput = document.getElementById('dept-group-input');
+  function updateDeptGroup() {
+    const g = DEPT_GROUPS[deptSel.value] || '';
+    groupDisplay.textContent = g || '—';
+    groupInput.value = g;
+  }
+  if (deptSel) {
+    deptSel.addEventListener('change', updateDeptGroup);
+    updateDeptGroup();
+  }
+</script>
 {% endblock %}
