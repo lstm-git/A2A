@@ -271,6 +271,58 @@ main { padding: 1.75rem 1rem; }
 .btn.secondary { background: #e2e8f0; color: #334155; }
 .btn.secondary:hover { background: #cbd5e1; }
 
+/* ---------- New Position page ---------- */
+.section-bar {
+  background: linear-gradient(90deg, #0b5d57, #0f766e);
+  color: #fff;
+  font-weight: 600;
+  font-size: .95rem;
+  padding: .55rem 1rem;
+  border-radius: 8px;
+  margin: 1.5rem 0 1rem;
+}
+
+.readonly-field {
+  padding: .55rem .65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+}
+
+.radio-group { display: flex; gap: 1.25rem; align-items: center; min-height: 42px; }
+.opt-inline { font-weight: 400; display: inline-flex; align-items: center; gap: .35rem; }
+
+.control.wide { max-width: none; }
+
+.workpattern { border-collapse: collapse; }
+.workpattern th, .workpattern td {
+  border: 1px solid var(--line);
+  padding: .4rem .5rem;
+  text-align: center;
+}
+.workpattern th { background: #f1f5f9; font-size: .85rem; }
+.workpattern td input[type="number"] {
+  width: 64px;
+  padding: .4rem .45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  text-align: center;
+}
+
+.attach-placeholder {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: .75rem .85rem;
+  background: var(--note-soft);
+  color: var(--note);
+  font-size: .88rem;
+}
+
 /* ---------- Generic step page (other steps) ---------- */
 .layout {
   display: flex;

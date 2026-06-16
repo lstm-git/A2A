@@ -101,14 +101,87 @@ STEPS.append(Step(
         {"name": "extension_end_date", "label": "New end date", "type": "date"},
     ],
 ))
+POSITION_TYPES = ["Staff", "Agency", "Work Placement"]
+PAYSCALES = [
+    "HERA (Grades 1-9)",
+    "HERA (Grades 1-9, Malawi)",
+    "Clinical Academic (doctors in training)",
+    "Clinical Academic (Clinical Lecturer)",
+    "Clinical Academic (Senior Lecturer/Reader)",
+    "Clinical Academic (Consultant)",
+    "NHS (Agenda for Change)",
+    "Professorial/Corporate Leader",
+    "Offscale",
+]
+POSITION_CLASSIFICATIONS = [
+    "Teaching Only", "Research Only", "Teaching & Research", "Other"]
+CONTRACT_BASES = ["Full-time (35 hours per week)", "Part-time"]
+YES_NO = ["Yes", "No"]
+WORK_PATTERN_DAYS = [
+    ("mon", "Monday"), ("tue", "Tuesday"), ("wed", "Wednesday"),
+    ("thu", "Thursday"), ("fri", "Friday"), ("sat", "Saturday"),
+    ("sun", "Sunday"),
+]
+
+_new_position_fields = [
+    # --- Position Details ---
+    {"name": "np_position_type", "label": "Position Type", "type": "select",
+     "options": POSITION_TYPES, "required": True, "section": "Position Details"},
+    {"name": "np_job_title", "label": "Job Title", "type": "text",
+     "required": True, "section": "Position Details"},
+    # Department & Line Manager are display-only (carried from the Purpose page).
+    {"name": "np_location", "label": "Position Location", "type": "text",
+     "required": True, "section": "Position Details",
+     "help": "Where the role will be based."},
+    {"name": "np_payscale", "label": "Payscale", "type": "select",
+     "options": PAYSCALES, "required": True, "section": "Position Details",
+     "help": "Select the applicable payscale for this position."},
+    {"name": "np_grade", "label": "Grade", "type": "text", "required": True,
+     "section": "Position Details", "help": "Enter the grade for this position."},
+    {"name": "np_spinal_point", "label": "Spinal Point", "type": "text",
+     "required": True, "section": "Position Details",
+     "help": "Enter the spinal point for this position."},
+    {"name": "np_classification", "label": "Position classification",
+     "type": "select", "options": POSITION_CLASSIFICATIONS, "required": True,
+     "section": "Position Details",
+     "help": "Select the classification that applies to this position."},
+    {"name": "np_classification_code", "label": "Position classification code",
+     "type": "text", "required": True, "section": "Position Details"},
+    {"name": "np_contract_basis", "label": "Contract Basis", "type": "select",
+     "options": CONTRACT_BASES, "required": True, "section": "Position Details"},
+    # Working pattern (np_hours_<day>) is rendered as a grid in the template.
+    {"name": "np_start_date", "label": "Estimated position start-date",
+     "type": "date", "required": True, "section": "Position Details"},
+    {"name": "np_child_contact",
+     "label": "Will this role have direct or indirect contact with children "
+              "and/or vulnerable adults?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Position Details"},
+    {"name": "np_justification", "label": "Justification for new position",
+     "type": "textarea", "required": True, "section": "Position Details",
+     "help": "Explain why this new position is needed."},
+    # --- Recruitment Information ---
+    {"name": "np_recruit_budget",
+     "label": "Is there a budget available for recruitment purposes?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Recruitment Information"},
+    {"name": "np_advert_cost_centre",
+     "label": "What cost centre should the advertising be charged to?",
+     "type": "text", "section": "Recruitment Information"},
+    {"name": "np_advert_sources", "label": "Suggested sources for advertisement",
+     "type": "textarea", "section": "Recruitment Information"},
+]
+# Working-pattern hours, one number field per day (Mon-Sun).
+_new_position_fields += [
+    {"name": f"np_hours_{key}", "label": label, "type": "number",
+     "section": "Position Details", "widget": "workpattern"}
+    for key, label in WORK_PATTERN_DAYS
+]
+
 STEPS.append(Step(
     "new_position", "New Position",
     condition=lambda a: a.get("purpose") == "New Position",
-    fields=[
-        {"name": "new_title", "label": "Job title", "type": "text"},
-        {"name": "new_grade", "label": "Grade", "type": "text"},
-        {"name": "new_justification", "label": "Justification", "type": "textarea"},
-    ],
+    fields=_new_position_fields,
 ))
 STEPS.append(Step(
     "replacement", "Replacement",

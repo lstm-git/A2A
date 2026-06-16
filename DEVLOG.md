@@ -80,6 +80,26 @@
 - **Note:** binding to 0.0.0.0 exposes the app directly on the VM IP (no proxy);
   acceptable on the trusted network. Reverse-proxy go-live item below still stands.
 
+## 2026-06-16 — New Position screen built out
+- Expanded the `new_position` step from 3 placeholder fields to the full form in
+  the supplied screenshot (22 fields), split into two sections:
+  - **Position Details:** Position Type (Staff/Agency/Work Placement), Job Title,
+    Position Location, Payscale (9-option HERA/Clinical/NHS list), Grade (text),
+    Spinal Point (text), Position classification (Teaching/Research/etc), classification
+    code, Contract Basis (Full-time 35h / Part-time), Mon–Sun working-pattern hours,
+    start-date, children/vulnerable-adults contact (Yes/No), Justification.
+  - **Recruitment Information:** recruitment-budget (Yes/No), advertising cost centre,
+    suggested advert sources.
+- **Decision (you):** dropdown option lists supplied by user; Grade & Spinal Point
+  kept as free-text; working pattern = 7 hours-per-day inputs.
+- **Department & Line Manager auto-populated** from the Purpose page — shown read-only
+  (not re-declared as fields, so they can't be overwritten; values live in session).
+- **Attachments:** placeholder row only, clearly marked on the form — no file
+  storage/upload yet. **TODO:** wire up upload once a DB/storage decision is made.
+- New `templates/step_new_position.html` (custom, section bars + work-pattern grid);
+  CSS added for `.section-bar`, `.readonly-field`, `.workpattern`, `.attach-placeholder`,
+  inline radios. Render verified via Flask test context (no Jinja errors).
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
