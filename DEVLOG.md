@@ -156,6 +156,14 @@
 - New shared macros `classification_code` + `clinical_row` in `_form_macros.html`;
   JS additions in `picker.js`; `.wp-total` styling. Both screens render-verified.
 
+## 2026-06-16 — Recruitment budget follow-up + generic conditional rows
+- "Is there a budget available for recruitment purposes?" = **Yes** now reveals a
+  follow-up **"Please enter recruitment budget"** (number, £). Fields
+  `np_recruit_budget_amount` / `rp_recruit_budget_amount`, `show_when` = (budget, Yes).
+- Generalised the clinical-duties toggle into a reusable `conditional_row(trigger,
+  value, field, …)` macro + a generic `[data-show-when]` JS handler (radios & selects).
+  Clinical-duties follow-up now uses the same mechanism. Both screens render-verified.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

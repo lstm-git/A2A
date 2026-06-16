@@ -35,7 +35,7 @@
 
       {{ F.row(step.fields, 'rp_classification', answers) }}
       {{ F.classification_code('rp_classification_code', answers) }}
-      {{ F.clinical_row('rp_classification', 'rp_clinical_duties', step.fields, answers) }}
+      {{ F.conditional_row('rp_classification', 'Other', 'rp_clinical_duties', step.fields, answers) }}
       {{ F.row(step.fields, 'rp_child_contact', answers) }}
 
       <div class="section-bar">Justification</div>
@@ -45,6 +45,7 @@
       <div class="section-bar">Recruitment Information</div>
 
       {{ F.row(step.fields, 'rp_recruit_budget', answers) }}
+      {{ F.conditional_row('rp_recruit_budget', 'Yes', 'rp_recruit_budget_amount', step.fields, answers) }}
       {{ F.row(step.fields, 'rp_advert_cost_centre', answers) }}
       {{ F.row(step.fields, 'rp_advert_sources', answers) }}
 

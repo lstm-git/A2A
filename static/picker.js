@@ -13,9 +13,8 @@ document.querySelectorAll('.a2a-form input[type="number"]').forEach((el) => {
   });
 });
 
-// Position classification -> code auto-fill, plus the "Other" clinical-duties
-// follow-up. Authoritative mapping lives in steps.py (CLASSIFICATION_CODES); this
-// copy only drives the live display before submit.
+// Position classification -> code auto-fill. Authoritative mapping lives in
+// steps.py (CLASSIFICATION_CODES); this copy only drives the live display.
 const CLASSIFICATION_CODES = {
   "Teaching Only": "40",
   "Research Only": "41",
@@ -25,14 +24,33 @@ const CLASSIFICATION_CODES = {
 document.querySelectorAll('select[name$="_classification"]').forEach((sel) => {
   const codeInput = document.querySelector('input[name="' + sel.name + '_code"]');
   const codeDisplay = document.getElementById(sel.name + "_code_display");
-  const clinicalRow = document.getElementById(sel.name + "_clinical_row");
   function sync() {
     const code = CLASSIFICATION_CODES[sel.value] || "";
     if (codeInput) codeInput.value = code;
     if (codeDisplay) codeDisplay.textContent = code || "—";
-    if (clinicalRow) clinicalRow.hidden = sel.value !== "Other";
   }
   sel.addEventListener("change", sync);
+  sync();
+});
+
+// Generic conditional follow-up rows: show a wrapped row only when its trigger
+// field (radio group or select) currently has the configured value.
+document.querySelectorAll("[data-show-when]").forEach((wrap) => {
+  const name = wrap.dataset.showWhen;
+  const value = wrap.dataset.showValue;
+  const controls = document.querySelectorAll('[name="' + name + '"]');
+  function current() {
+    const radios = [...controls].filter((c) => c.type === "radio");
+    if (radios.length) {
+      const checked = radios.find((r) => r.checked);
+      return checked ? checked.value : "";
+    }
+    return controls[0] ? controls[0].value : "";
+  }
+  function sync() {
+    wrap.hidden = current() !== value;
+  }
+  controls.forEach((c) => c.addEventListener("change", sync));
   sync();
 });
 

@@ -23,7 +23,7 @@
       {{ F.row(step.fields, 'np_spinal_point', answers) }}
       {{ F.row(step.fields, 'np_classification', answers) }}
       {{ F.classification_code('np_classification_code', answers) }}
-      {{ F.clinical_row('np_classification', 'np_clinical_duties', step.fields, answers) }}
+      {{ F.conditional_row('np_classification', 'Other', 'np_clinical_duties', step.fields, answers) }}
       {{ F.row(step.fields, 'np_contract_basis', answers) }}
 
       {# Working pattern — hours per day, Mon-Sun (each capped at 12h). #}
@@ -39,6 +39,7 @@
       <div class="section-bar">Recruitment Information</div>
 
       {{ F.row(step.fields, 'np_recruit_budget', answers) }}
+      {{ F.conditional_row('np_recruit_budget', 'Yes', 'np_recruit_budget_amount', step.fields, answers) }}
       {{ F.row(step.fields, 'np_advert_cost_centre', answers) }}
       {{ F.row(step.fields, 'np_advert_sources', answers) }}
 

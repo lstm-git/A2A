@@ -57,10 +57,11 @@
   </div>
 {% endmacro %}
 
-{# Clinical-duties follow-up, shown only when the classification select = 'Other'. #}
-{% macro clinical_row(select_name, field_name, fields, answers) %}
-  <div id="{{ select_name }}_clinical_row"
-       {{ '' if answers.get(select_name) == 'Other' else 'hidden' }}>
+{# Conditional follow-up row: shown only when field `trigger` has value `value`.
+   Works for radio groups and selects (toggled live by picker.js). #}
+{% macro conditional_row(trigger, value, field_name, fields, answers) %}
+  <div data-show-when="{{ trigger }}" data-show-value="{{ value }}"
+       {{ '' if answers.get(trigger) == value else 'hidden' }}>
     {{ row(fields, field_name, answers) }}
   </div>
 {% endmacro %}
