@@ -210,14 +210,71 @@ STEPS.append(Step(
     condition=lambda a: a.get("purpose") == "New Position",
     fields=_new_position_fields,
 ))
+REPLACEMENT_TYPES = ["Staff", "Agency"]
+
+_replacement_fields = [
+    {"name": "rp_replacement_type", "label": "Replacement type", "type": "select",
+     "options": REPLACEMENT_TYPES, "required": True, "section": "_top"},
+    {"name": "rp_name_replaced", "label": "Name of person being replaced",
+     "type": "text", "required": True, "section": "_top"},
+    # --- Position Details ---
+    {"name": "rp_job_title", "label": "Job Title", "type": "text",
+     "required": True, "section": "Position Details"},
+    # Department & Line Manager are display-only (carried from the Purpose page).
+    {"name": "rp_start_date", "label": "Estimated start-date of replacement",
+     "type": "date", "required": True, "section": "Position Details"},
+    {"name": "rp_payscale", "label": "Payscale", "type": "select",
+     "options": PAYSCALES, "required": True, "section": "Position Details",
+     "help": "Select the applicable payscale for this position."},
+    {"name": "rp_grade", "label": "Grade", "type": "text", "required": True,
+     "section": "Position Details", "help": "Enter the grade for this position."},
+    {"name": "rp_spinal_point", "label": "Spinal Point", "type": "text",
+     "required": True, "section": "Position Details",
+     "help": "Enter the spinal point for this position."},
+    {"name": "rp_location", "label": "Position Location", "type": "text",
+     "required": True, "section": "Position Details",
+     "help": "Where the role will be based."},
+    {"name": "rp_hours_per_week",
+     "label": "Please enter number of hours to be worked per week",
+     "type": "number", "required": True, "section": "Position Details"},
+    # Working pattern (rp_hours_<day>) is rendered as a grid in the template
+    # and is optional ("if known").
+    {"name": "rp_classification", "label": "Position Classification",
+     "type": "select", "options": POSITION_CLASSIFICATIONS, "required": True,
+     "section": "Position Details",
+     "help": "Select the classification that applies to this position."},
+    {"name": "rp_classification_code", "label": "Position classification code",
+     "type": "text", "required": True, "section": "Position Details"},
+    {"name": "rp_child_contact",
+     "label": "Does this role involve direct or indirect contact with children "
+              "and/or vulnerable adults?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Position Details"},
+    # --- Justification ---
+    {"name": "rp_justification", "label": "Justification for Replacement",
+     "type": "textarea", "required": True, "section": "Justification"},
+    # --- Recruitment Information ---
+    {"name": "rp_recruit_budget",
+     "label": "Is there a budget available for recruitment purposes?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Recruitment Information"},
+    {"name": "rp_advert_cost_centre",
+     "label": "What cost centre should the advertising be charged to?",
+     "type": "text", "section": "Recruitment Information"},
+    {"name": "rp_advert_sources", "label": "Suggested sources of advertising",
+     "type": "textarea", "section": "Recruitment Information"},
+]
+# Working-pattern hours, one number field per day (Mon-Sun); optional.
+_replacement_fields += [
+    {"name": f"rp_hours_{key}", "label": label, "type": "number",
+     "section": "Position Details", "widget": "workpattern"}
+    for key, label in WORK_PATTERN_DAYS
+]
+
 STEPS.append(Step(
     "replacement", "Replacement",
     condition=lambda a: a.get("purpose") == "Replacement",
-    fields=[
-        {"name": "replacement_leaver", "label": "Person being replaced", "type": "text"},
-        {"name": "replacement_title", "label": "Job title", "type": "text"},
-        {"name": "replacement_changes", "label": "Any changes to the role?", "type": "textarea"},
-    ],
+    fields=_replacement_fields,
 ))
 STEPS.append(Step(
     "consultancy", "Consultancy",

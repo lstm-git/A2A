@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% import "_form_macros.html" as F %}
+
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">Replacement</h2>
+
+    <form method="post" class="a2a-form">
+
+      {{ F.row(step.fields, 'rp_replacement_type', answers) }}
+      {{ F.row(step.fields, 'rp_name_replaced', answers) }}
+
+      <div class="section-bar">Position Details</div>
+
+      {{ F.row(step.fields, 'rp_job_title', answers) }}
+
+      {# Department & Line Manager carried over from the Purpose page (read-only). #}
+      {{ F.readonly_row('Department', answers.get('department')) }}
+      {{ F.readonly_row('Line Manager', answers.get('line_manager')) }}
+
+      {{ F.row(step.fields, 'rp_start_date', answers) }}
+      {{ F.row(step.fields, 'rp_payscale', answers) }}
+      {{ F.row(step.fields, 'rp_grade', answers) }}
+      {{ F.row(step.fields, 'rp_spinal_point', answers) }}
+      {{ F.row(step.fields, 'rp_location', answers) }}
+      {{ F.row(step.fields, 'rp_hours_per_week', answers) }}
+
+      {# Working pattern — optional ("if known"). #}
+      <div class="form-row">
+        <label>Please enter working pattern (if known)</label>
+        <div class="control wide">{{ F.workpattern(answers, 'rp_hours_') }}</div>
+      </div>
+
+      {{ F.row(step.fields, 'rp_classification', answers) }}
+      {{ F.row(step.fields, 'rp_classification_code', answers) }}
+      {{ F.row(step.fields, 'rp_child_contact', answers) }}
+
+      <div class="section-bar">Justification</div>
+
+      {{ F.row(step.fields, 'rp_justification', answers) }}
+
+      <div class="section-bar">Recruitment Information</div>
+
+      {{ F.row(step.fields, 'rp_recruit_budget', answers) }}
+      {{ F.row(step.fields, 'rp_advert_cost_centre', answers) }}
+      {{ F.row(step.fields, 'rp_advert_sources', answers) }}
+
+      {{ F.attachments_placeholder() }}
+
+      <div class="actions">
+        {% if prev_id %}
+          <a class="btn secondary" href="{{ url_for('step', step_id=prev_id) }}">Back</a>
+        {% endif %}
+        <button class="btn" type="submit">Next</button>
+      </div>
+
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{# Shared form-rendering macros for the position/replacement screens. #}
+
+{# Control for a single field dict. #}
+{% macro control(f, answers) %}
+  {% if f.type == "text" %}
+    <input type="text" name="{{ f.name }}" value="{{ answers.get(f.name, '') }}"
+           {{ 'required' if f.required }}>
+  {% elif f.type == "number" %}
+    <input type="number" step="any" name="{{ f.name }}"
+           value="{{ answers.get(f.name, '') }}" {{ 'required' if f.required }}>
+  {% elif f.type == "date" %}
+    <input type="date" name="{{ f.name }}" value="{{ answers.get(f.name, '') }}"
+           {{ 'required' if f.required }}>
+  {% elif f.type == "textarea" %}
+    <textarea name="{{ f.name }}" rows="3" {{ 'required' if f.required }}>{{ answers.get(f.name, '') }}</textarea>
+  {% elif f.type == "select" %}
+    <select name="{{ f.name }}" {{ 'required' if f.required }}>
+      <option value="" {{ 'selected' if not answers.get(f.name) }}>— Select —</option>
+      {% for opt in f.options %}
+        <option value="{{ opt }}" {{ 'selected' if answers.get(f.name) == opt }}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+  {% elif f.type == "radio" %}
+    <div class="radio-group">
+      {% for opt in f.options %}
+        <label class="opt-inline">
+          <input type="radio" name="{{ f.name }}" value="{{ opt }}"
+                 {{ 'checked' if answers.get(f.name) == opt }}
+                 {{ 'required' if f.required }}> {{ opt }}
+        </label>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{# Full labelled row for a field looked up by name within `fields`. #}
+{% macro row(fields, name, answers) %}
+  {% set f = fields | selectattr('name', 'equalto', name) | first %}
+  <div class="form-row">
+    <label>{{ f.label }}{% if f.required %} <span class="req">*</span>{% endif %}
+      {% if f.help %}<span class="help" tabindex="0" data-tip="{{ f.help }}">i</span>{% endif %}
+    </label>
+    <div class="control">{{ control(f, answers) }}</div>
+  </div>
+{% endmacro %}
+
+{# Read-only display row (used for fields carried over from an earlier page). #}
+{% macro readonly_row(label, value, required=True) %}
+  <div class="form-row">
+    <label>{{ label }}{% if required %} <span class="req">*</span>{% endif %}</label>
+    <div class="control">
+      <div class="readonly-field">{{ value or '—' }}</div>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Mon-Sun hours grid. Field names are `<prefix>mon` ... `<prefix>sun`. #}
+{% macro workpattern(answers, prefix) %}
+  {% set days = [('mon','Monday'), ('tue','Tuesday'), ('wed','Wednesday'),
+                 ('thu','Thursday'), ('fri','Friday'), ('sat','Saturday'),
+                 ('sun','Sunday')] %}
+  <table class="workpattern">
+    <thead>
+      <tr><th>#</th>{% for key, label in days %}<th>{{ label }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1.</td>
+        {% for key, label in days %}
+          {% set fn = prefix ~ key %}
+          <td><input type="number" step="any" min="0" name="{{ fn }}"
+                     value="{{ answers.get(fn, '') }}"></td>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+{% endmacro %}
+
+{# Attachments placeholder row (no upload built yet). #}
+{% macro attachments_placeholder() %}
+  <div class="form-row">
+    <label>Attachments</label>
+    <div class="control wide">
+      <div class="attach-placeholder">
+        📎 Attach JD/PS/HIF forms here.
+        <strong>Placeholder — file upload is not built yet</strong>
+        (no files are saved). To be wired up once storage is in place.
+      </div>
+    </div>
+  </div>
+{% endmacro %}

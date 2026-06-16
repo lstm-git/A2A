@@ -1,53 +1,7 @@
 {% extends "base.html" %}
-
-{# Render the control for a single field dict (text/number/date/textarea/select/radio). #}
-{% macro control(f) %}
-  {% if f.type == "text" %}
-    <input type="text" name="{{ f.name }}" value="{{ answers.get(f.name, '') }}"
-           {{ 'required' if f.required }}>
-  {% elif f.type == "number" %}
-    <input type="number" step="any" name="{{ f.name }}"
-           value="{{ answers.get(f.name, '') }}" {{ 'required' if f.required }}>
-  {% elif f.type == "date" %}
-    <input type="date" name="{{ f.name }}" value="{{ answers.get(f.name, '') }}"
-           {{ 'required' if f.required }}>
-  {% elif f.type == "textarea" %}
-    <textarea name="{{ f.name }}" rows="3" {{ 'required' if f.required }}>{{ answers.get(f.name, '') }}</textarea>
-  {% elif f.type == "select" %}
-    <select name="{{ f.name }}" {{ 'required' if f.required }}>
-      <option value="" {{ 'selected' if not answers.get(f.name) }}>— Select —</option>
-      {% for opt in f.options %}
-        <option value="{{ opt }}" {{ 'selected' if answers.get(f.name) == opt }}>{{ opt }}</option>
-      {% endfor %}
-    </select>
-  {% elif f.type == "radio" %}
-    <div class="radio-group">
-      {% for opt in f.options %}
-        <label class="opt-inline">
-          <input type="radio" name="{{ f.name }}" value="{{ opt }}"
-                 {{ 'checked' if answers.get(f.name) == opt }}
-                 {{ 'required' if f.required }}> {{ opt }}
-        </label>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endmacro %}
-
-{# Full labelled row for a field looked up by name. #}
-{% macro row(fields, name) %}
-  {% set f = fields | selectattr('name', 'equalto', name) | first %}
-  <div class="form-row">
-    <label>{{ f.label }}{% if f.required %} <span class="req">*</span>{% endif %}
-      {% if f.help %}<span class="help" tabindex="0" data-tip="{{ f.help }}">i</span>{% endif %}
-    </label>
-    <div class="control">{{ control(f) }}</div>
-  </div>
-{% endmacro %}
+{% import "_form_macros.html" as F %}
 
 {% block content %}
-{% set days = [('mon','Monday'), ('tue','Tuesday'), ('wed','Wednesday'),
-               ('thu','Thursday'), ('fri','Friday'), ('sat','Saturday'),
-               ('sun','Sunday')] %}
 <div class="page">
   <section class="card">
     <h2 style="margin-top:0">New Position</h2>
@@ -56,77 +10,38 @@
 
       <div class="section-bar">Position Details</div>
 
-      {{ row(step.fields, 'np_position_type') }}
-      {{ row(step.fields, 'np_job_title') }}
+      {{ F.row(step.fields, 'np_position_type', answers) }}
+      {{ F.row(step.fields, 'np_job_title', answers) }}
 
       {# Department & Line Manager carried over from the Purpose page (read-only). #}
-      <div class="form-row">
-        <label>Department <span class="req">*</span></label>
-        <div class="control">
-          <div class="readonly-field">{{ answers.get('department') or '—' }}</div>
-        </div>
-      </div>
-      <div class="form-row">
-        <label>Line Manager <span class="req">*</span></label>
-        <div class="control">
-          <div class="readonly-field">{{ answers.get('line_manager') or '—' }}</div>
-        </div>
-      </div>
+      {{ F.readonly_row('Department', answers.get('department')) }}
+      {{ F.readonly_row('Line Manager', answers.get('line_manager')) }}
 
-      {{ row(step.fields, 'np_location') }}
-      {{ row(step.fields, 'np_payscale') }}
-      {{ row(step.fields, 'np_grade') }}
-      {{ row(step.fields, 'np_spinal_point') }}
-      {{ row(step.fields, 'np_classification') }}
-      {{ row(step.fields, 'np_classification_code') }}
-      {{ row(step.fields, 'np_contract_basis') }}
+      {{ F.row(step.fields, 'np_location', answers) }}
+      {{ F.row(step.fields, 'np_payscale', answers) }}
+      {{ F.row(step.fields, 'np_grade', answers) }}
+      {{ F.row(step.fields, 'np_spinal_point', answers) }}
+      {{ F.row(step.fields, 'np_classification', answers) }}
+      {{ F.row(step.fields, 'np_classification_code', answers) }}
+      {{ F.row(step.fields, 'np_contract_basis', answers) }}
 
       {# Working pattern — hours per day, Mon-Sun. #}
       <div class="form-row">
         <label>Please enter working pattern</label>
-        <div class="control wide">
-          <table class="workpattern">
-            <thead>
-              <tr>
-                <th>#</th>
-                {% for key, label in days %}<th>{{ label }}</th>{% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1.</td>
-                {% for key, label in days %}
-                  {% set fn = 'np_hours_' ~ key %}
-                  <td><input type="number" step="any" min="0" name="{{ fn }}"
-                             value="{{ answers.get(fn, '') }}"></td>
-                {% endfor %}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <div class="control wide">{{ F.workpattern(answers, 'np_hours_') }}</div>
       </div>
 
-      {{ row(step.fields, 'np_start_date') }}
-      {{ row(step.fields, 'np_child_contact') }}
-      {{ row(step.fields, 'np_justification') }}
+      {{ F.row(step.fields, 'np_start_date', answers) }}
+      {{ F.row(step.fields, 'np_child_contact', answers) }}
+      {{ F.row(step.fields, 'np_justification', answers) }}
 
       <div class="section-bar">Recruitment Information</div>
 
-      {{ row(step.fields, 'np_recruit_budget') }}
-      {{ row(step.fields, 'np_advert_cost_centre') }}
-      {{ row(step.fields, 'np_advert_sources') }}
+      {{ F.row(step.fields, 'np_recruit_budget', answers) }}
+      {{ F.row(step.fields, 'np_advert_cost_centre', answers) }}
+      {{ F.row(step.fields, 'np_advert_sources', answers) }}
 
-      {# Attachments — placeholder only, no file storage yet. #}
-      <div class="form-row">
-        <label>Attachments</label>
-        <div class="control wide">
-          <div class="attach-placeholder">
-            📎 Attach JD/PS/HIF forms here.
-            <strong>Placeholder — file upload is not built yet</strong>
-            (no files are saved). To be wired up once storage is in place.
-          </div>
-        </div>
-      </div>
+      {{ F.attachments_placeholder() }}
 
       <div class="actions">
         {% if prev_id %}

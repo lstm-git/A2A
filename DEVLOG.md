@@ -117,6 +117,22 @@
   read-only display + hidden input; a small inline script updates it live on dropdown
   change (map passed to the template via `dept_groups`).
 
+## 2026-06-16 — Replacement screen built out
+- Expanded the `replacement` step to the full form in the screenshot (23 fields):
+  Replacement type (Staff/Agency) + Name of person being replaced, then
+  **Position Details** (Job Title, read-only Department/Line Manager, start-date of
+  replacement, Payscale, Grade, Spinal Point, Position Location, hours-per-week,
+  optional Mon–Sun working pattern, Position Classification, classification code,
+  children/vulnerable-adults contact), **Justification** (Justification for
+  Replacement), **Recruitment Information** (budget Yes/No, advert cost centre,
+  advert sources), and the attachments placeholder.
+- Reuses PAYSCALES / POSITION_CLASSIFICATIONS / YES_NO lists; working pattern is
+  optional here ("if known"); fields prefixed `rp_`.
+- **Refactor:** pulled the shared rendering into `templates/_form_macros.html`
+  (control / row / readonly_row / workpattern / attachments_placeholder) and rewired
+  both `step_new_position.html` and `step_replacement.html` to import it, so the two
+  screens stay consistent. Both render verified via Flask test context.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
