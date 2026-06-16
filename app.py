@@ -65,6 +65,13 @@ def step(step_id):
             answers["departmental_group"] = step_engine.group_for(
                 answers.get("department", ""))
 
+        # Position classification code is derived from the classification choice.
+        for f in current.fields:
+            if f["name"].endswith("_classification"):
+                answers[f["name"] + "_code"] = (
+                    step_engine.code_for_classification(
+                        answers.get(f["name"], "")))
+
         session.modified = True
 
         errors = validate_step(current, answers)

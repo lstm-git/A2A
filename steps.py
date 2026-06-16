@@ -142,6 +142,18 @@ PAYSCALES = [
 ]
 POSITION_CLASSIFICATIONS = [
     "Teaching Only", "Research Only", "Teaching & Research", "Other"]
+# Position classification code is derived from the classification choice.
+CLASSIFICATION_CODES = {
+    "Teaching Only": "40",
+    "Research Only": "41",
+    "Teaching & Research": "42",
+    "Other": "43",
+}
+
+
+def code_for_classification(value: str) -> str:
+    """Return the position classification code ('' if unknown)."""
+    return CLASSIFICATION_CODES.get(value, "")
 CONTRACT_BASES = ["Full-time (35 hours per week)", "Part-time"]
 YES_NO = ["Yes", "No"]
 WORK_PATTERN_DAYS = [
@@ -174,6 +186,10 @@ _new_position_fields = [
      "help": "Select the classification that applies to this position."},
     {"name": "np_classification_code", "label": "Position classification code",
      "type": "text", "required": True, "section": "Position Details"},
+    {"name": "np_clinical_duties",
+     "label": "Does this role include Clinical Duties?", "type": "radio",
+     "options": YES_NO, "section": "Position Details",
+     "show_when": ("np_classification", "Other")},
     {"name": "np_contract_basis", "label": "Contract Basis", "type": "select",
      "options": CONTRACT_BASES, "required": True, "section": "Position Details"},
     # Working pattern (np_hours_<day>) is rendered as a grid in the template.
@@ -245,6 +261,10 @@ _replacement_fields = [
      "help": "Select the classification that applies to this position."},
     {"name": "rp_classification_code", "label": "Position classification code",
      "type": "text", "required": True, "section": "Position Details"},
+    {"name": "rp_clinical_duties",
+     "label": "Does this role include Clinical Duties?", "type": "radio",
+     "options": YES_NO, "section": "Position Details",
+     "show_when": ("rp_classification", "Other")},
     {"name": "rp_child_contact",
      "label": "Does this role involve direct or indirect contact with children "
               "and/or vulnerable adults?",

@@ -26,14 +26,16 @@
       {{ F.row(step.fields, 'rp_location', answers) }}
       {{ F.row(step.fields, 'rp_hours_per_week', answers) }}
 
-      {# Working pattern — optional ("if known"). #}
+      {# Working pattern — optional ("if known"); each day capped at 12h and the
+         entered pattern must sum to the weekly hours above. #}
       <div class="form-row">
         <label>Please enter working pattern (if known)</label>
-        <div class="control wide">{{ F.workpattern(answers, 'rp_hours_') }}</div>
+        <div class="control wide">{{ F.workpattern(answers, 'rp_hours_', 'rp_hours_per_week') }}</div>
       </div>
 
       {{ F.row(step.fields, 'rp_classification', answers) }}
-      {{ F.row(step.fields, 'rp_classification_code', answers) }}
+      {{ F.classification_code('rp_classification_code', answers) }}
+      {{ F.clinical_row('rp_classification', 'rp_clinical_duties', step.fields, answers) }}
       {{ F.row(step.fields, 'rp_child_contact', answers) }}
 
       <div class="section-bar">Justification</div>

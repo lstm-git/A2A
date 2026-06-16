@@ -141,6 +141,21 @@
 - `picker.js`: blocks `-`/`+`/`e` keys and strips pasted minus on those inputs.
 - Decimals still allowed (e.g. 7.5 hours).
 
+## 2026-06-16 — Working-pattern limits + classification code/clinical-duties logic
+- **Working pattern:** each day box capped at 12h (`max="12"`). A live total shows
+  under the grid; where a step has a weekly-hours field (Replacement,
+  `rp_hours_per_week`), an entered pattern must sum to it or submit is blocked
+  (`setCustomValidity`). Empty/"not known" pattern is allowed.
+- **Position classification code** is now derived, read-only: Teaching Only=40,
+  Research Only=41, Teaching & Research=42, Other=43. Source of truth
+  `steps.CLASSIFICATION_CODES` + `code_for_classification()`; `app.py` sets
+  `<x>_classification_code` on submit; live JS fills the display.
+- **Clinical duties follow-up:** "Does this role include Clinical Duties? (Yes/No)"
+  appears only when classification = Other (`show_when` metadata; rendered hidden
+  and toggled by JS). Applies to both New Position and Replacement.
+- New shared macros `classification_code` + `clinical_row` in `_form_macros.html`;
+  JS additions in `picker.js`; `.wp-total` styling. Both screens render-verified.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

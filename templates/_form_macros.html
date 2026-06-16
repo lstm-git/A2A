@@ -44,6 +44,27 @@
   </div>
 {% endmacro %}
 
+{# Read-only Position classification code, auto-filled from the classification.
+   `name` is the code field (e.g. np_classification_code). #}
+{% macro classification_code(name, answers) %}
+  <div class="form-row">
+    <label>Position classification code <span class="req">*</span></label>
+    <div class="control">
+      <div class="readonly-field" id="{{ name }}_display">{{ answers.get(name) or '—' }}</div>
+      <input type="hidden" name="{{ name }}" value="{{ answers.get(name, '') }}">
+      <p class="field-hint">Set automatically from the Position Classification.</p>
+    </div>
+  </div>
+{% endmacro %}
+
+{# Clinical-duties follow-up, shown only when the classification select = 'Other'. #}
+{% macro clinical_row(select_name, field_name, fields, answers) %}
+  <div id="{{ select_name }}_clinical_row"
+       {{ '' if answers.get(select_name) == 'Other' else 'hidden' }}>
+    {{ row(fields, field_name, answers) }}
+  </div>
+{% endmacro %}
+
 {# Read-only display row (used for fields carried over from an earlier page). #}
 {% macro readonly_row(label, value, required=True) %}
   <div class="form-row">
@@ -54,26 +75,31 @@
   </div>
 {% endmacro %}
 
-{# Mon-Sun hours grid. Field names are `<prefix>mon` ... `<prefix>sun`. #}
-{% macro workpattern(answers, prefix) %}
+{# Mon-Sun hours grid. Field names are `<prefix>mon` ... `<prefix>sun`.
+   Each day is capped at 12 hours. If `perweek` (a field name) is given, JS checks
+   the entered pattern sums to that weekly total. #}
+{% macro workpattern(answers, prefix, perweek='') %}
   {% set days = [('mon','Monday'), ('tue','Tuesday'), ('wed','Wednesday'),
                  ('thu','Thursday'), ('fri','Friday'), ('sat','Saturday'),
                  ('sun','Sunday')] %}
-  <table class="workpattern">
-    <thead>
-      <tr><th>#</th>{% for key, label in days %}<th>{{ label }}</th>{% endfor %}</tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1.</td>
-        {% for key, label in days %}
-          {% set fn = prefix ~ key %}
-          <td><input type="number" step="any" min="0" inputmode="decimal"
-                     name="{{ fn }}" value="{{ answers.get(fn, '') }}"></td>
-        {% endfor %}
-      </tr>
-    </tbody>
-  </table>
+  <div data-workpattern data-prefix="{{ prefix }}" data-perweek="{{ perweek }}">
+    <table class="workpattern">
+      <thead>
+        <tr><th>#</th>{% for key, label in days %}<th>{{ label }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1.</td>
+          {% for key, label in days %}
+            {% set fn = prefix ~ key %}
+            <td><input type="number" step="any" min="0" max="12" inputmode="decimal"
+                       name="{{ fn }}" value="{{ answers.get(fn, '') }}"></td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+    <p class="wp-total field-hint"></p>
+  </div>
 {% endmacro %}
 
 {# Attachments placeholder row (no upload built yet). #}

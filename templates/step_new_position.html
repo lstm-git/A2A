@@ -22,10 +22,11 @@
       {{ F.row(step.fields, 'np_grade', answers) }}
       {{ F.row(step.fields, 'np_spinal_point', answers) }}
       {{ F.row(step.fields, 'np_classification', answers) }}
-      {{ F.row(step.fields, 'np_classification_code', answers) }}
+      {{ F.classification_code('np_classification_code', answers) }}
+      {{ F.clinical_row('np_classification', 'np_clinical_duties', step.fields, answers) }}
       {{ F.row(step.fields, 'np_contract_basis', answers) }}
 
-      {# Working pattern — hours per day, Mon-Sun. #}
+      {# Working pattern — hours per day, Mon-Sun (each capped at 12h). #}
       <div class="form-row">
         <label>Please enter working pattern</label>
         <div class="control wide">{{ F.workpattern(answers, 'np_hours_') }}</div>

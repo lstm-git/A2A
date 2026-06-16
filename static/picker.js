@@ -13,6 +13,75 @@ document.querySelectorAll('.a2a-form input[type="number"]').forEach((el) => {
   });
 });
 
+// Position classification -> code auto-fill, plus the "Other" clinical-duties
+// follow-up. Authoritative mapping lives in steps.py (CLASSIFICATION_CODES); this
+// copy only drives the live display before submit.
+const CLASSIFICATION_CODES = {
+  "Teaching Only": "40",
+  "Research Only": "41",
+  "Teaching & Research": "42",
+  Other: "43",
+};
+document.querySelectorAll('select[name$="_classification"]').forEach((sel) => {
+  const codeInput = document.querySelector('input[name="' + sel.name + '_code"]');
+  const codeDisplay = document.getElementById(sel.name + "_code_display");
+  const clinicalRow = document.getElementById(sel.name + "_clinical_row");
+  function sync() {
+    const code = CLASSIFICATION_CODES[sel.value] || "";
+    if (codeInput) codeInput.value = code;
+    if (codeDisplay) codeDisplay.textContent = code || "—";
+    if (clinicalRow) clinicalRow.hidden = sel.value !== "Other";
+  }
+  sel.addEventListener("change", sync);
+  sync();
+});
+
+// Working pattern: live total, and (where a weekly-hours field is named) require an
+// entered pattern to add up to that weekly total before the form can be submitted.
+document.querySelectorAll("[data-workpattern]").forEach((wrap) => {
+  const dayInputs = wrap.querySelectorAll('input[type="number"]');
+  const perWeekName = wrap.dataset.perweek;
+  const perWeek = perWeekName
+    ? document.querySelector('[name="' + perWeekName + '"]')
+    : null;
+  const note = wrap.querySelector(".wp-total");
+
+  function update() {
+    let total = 0;
+    let anyFilled = false;
+    dayInputs.forEach((i) => {
+      if (i.value !== "") anyFilled = true;
+      total += parseFloat(i.value) || 0;
+    });
+    const rounded = Math.round(total * 100) / 100;
+    let msg = "Total: " + rounded + " hrs";
+    let bad = false;
+    if (perWeek && perWeek.value !== "" && anyFilled) {
+      const target = parseFloat(perWeek.value) || 0;
+      if (rounded !== target) {
+        msg += " — must equal the weekly hours (" + target + ")";
+        bad = true;
+      } else {
+        msg += " — matches weekly hours";
+      }
+    }
+    if (note) {
+      note.textContent = msg;
+      note.classList.toggle("mismatch", bad);
+    }
+    // Block submit while the entered pattern doesn't match the weekly total.
+    dayInputs.forEach((i) =>
+      i.setCustomValidity(
+        bad ? "Working pattern must add up to the weekly hours." : ""
+      )
+    );
+  }
+
+  dayInputs.forEach((i) => i.addEventListener("input", update));
+  if (perWeek) perWeek.addEventListener("input", update);
+  update();
+});
+
 function initPicker(root) {
   const input = root.querySelector(".picker-input");
   const hidden = root.querySelector('input[type="hidden"]');
