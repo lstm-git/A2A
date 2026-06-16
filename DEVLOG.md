@@ -67,6 +67,19 @@
 - **Service / permissions:** install a2a.service and `chown -R www-data` the app
   dir + venv so the service user can read them (only needed once run as a service).
 
+## 2026-06-16 — Service not reachable on VM IP
+- **Symptom:** site loaded yesterday, today `http://10.18.0.145:8091/` unreachable
+  though `a2a` was running + enabled.
+- **Cause:** `a2a.service` set `HOST=127.0.0.1`, so Flask only bound loopback;
+  the VM IP rejected connections. (App was healthy — `curl 127.0.0.1:8091` = 302.)
+- **Fix:** changed `HOST` to `0.0.0.0`. On the VM: edited
+  `/etc/systemd/system/a2a.service`, `daemon-reload` + `restart`; verified
+  `ss -ltnp` now shows `0.0.0.0:8091`. Committed same change to repo `a2a.service`
+  (commit 94a8a79) so redeploys don't reset it. Confirmed VM IP is on ens33,
+  ufw inactive.
+- **Note:** binding to 0.0.0.0 exposes the app directly on the VM IP (no proxy);
+  acceptable on the trusted network. Reverse-proxy go-live item below still stands.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
