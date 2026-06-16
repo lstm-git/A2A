@@ -40,10 +40,30 @@ git pull
 sudo systemctl restart a2a
 ```
 
-## Reverse proxy
+## Reverse proxy / hub
 
-Add a route that forwards to `http://127.0.0.1:8091`, matching how
-`/opt/ontrack-api` (port 5000) is exposed on `:8090`.
+Exposed on the trackon site as `https://trackon.lstmed.ac.uk/A2A/`. The route
+lives in the trackon repo (`Catering_orders/ontrack-nginx.conf`, the copy of the
+live nginx config) and a card on `index.html` links to it. The app is prefix-aware
+via `ProxyFix` + the `X-Forwarded-Prefix /A2A` header nginx sends.
+
+Deploy steps on the VM:
+
+```bash
+# 1. A2A app (this repo) — picks up ProxyFix etc. No new deps (werkzeug ships
+#    with Flask).
+cd /opt/trackon/A2A && git pull
+sudo systemctl restart a2a
+
+# 2. trackon repo — picks up the nginx route + the hub card.
+cd /opt/trackon && sudo git pull
+#    Copy the updated config over the LIVE site file, then test + reload.
+#    (Confirm the live filename first: ls /etc/nginx/sites-enabled/)
+sudo cp /opt/trackon/Catering_orders/ontrack-nginx.conf /etc/nginx/sites-enabled/trackon
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Then browse `https://trackon.lstmed.ac.uk/A2A/`.
 
 ## Notes
 - `app.py` reads `HOST`/`PORT` from the environment (set in `a2a.service`);

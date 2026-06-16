@@ -164,6 +164,22 @@
   value, field, …)` macro + a generic `[data-show-when]` JS handler (radios & selects).
   Clinical-duties follow-up now uses the same mechanism. Both screens render-verified.
 
+## 2026-06-16 — Wired into trackon hub at /A2A/
+- **Decision:** serve A2A as a sub-path of the existing site,
+  `https://trackon.lstmed.ac.uk/A2A/` (reuses domain + wildcard cert; no DNS/cert
+  work) rather than a subdomain. Unlike the 3 static apps, A2A is a live Flask
+  service, so it needs a reverse-proxy route (like `/catering/` but → port 8091).
+- **A2A app (this repo):** added `ProxyFix(x_prefix=1)` so `url_for`/static honour
+  nginx's `X-Forwarded-Prefix` and build links under `/A2A`. base.html now exposes
+  `window.A2A_ROOT = request.script_root`; picker.js uses it for the `/api/users/
+  search` fetch (the only hard-coded absolute path). Verified via test client with
+  the forwarded headers.
+- **trackon repo (parent):** added `location /A2A/` block to
+  `Catering_orders/ontrack-nginx.conf` (proxy_pass to 127.0.0.1:8091/ with trailing
+  slash + X-Forwarded-Prefix /A2A); added a "A2A — Authority to Appoint" card to
+  `index.html` linking to `A2A/`.
+- **Deploy:** see DEPLOY.md "Reverse proxy / hub" section.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

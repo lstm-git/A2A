@@ -9,6 +9,7 @@ import os
 from dotenv import load_dotenv
 from flask import (Flask, jsonify, redirect, render_template, request,
                    session, url_for)
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
@@ -17,6 +18,11 @@ import steps as step_engine
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+
+# Behind the trackon nginx reverse proxy the app is mounted under a sub-path
+# (e.g. /A2A). ProxyFix honours the X-Forwarded-Prefix header nginx sends so that
+# url_for() and static URLs are generated with that prefix.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 
 def get_answers() -> dict:

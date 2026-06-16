@@ -156,7 +156,8 @@ function initPicker(root) {
     results.hidden = false;
     results.innerHTML = '<div class="picker-msg">Searching…</div>';
     try {
-      const r = await fetch("/api/users/search?q=" + encodeURIComponent(q));
+      const root = window.A2A_ROOT || "";
+      const r = await fetch(root + "/api/users/search?q=" + encodeURIComponent(q));
       render(await r.json());
     } catch (e) {
       results.innerHTML = '<div class="picker-msg">Search failed.</div>';
