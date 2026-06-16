@@ -6,7 +6,7 @@
     <input type="text" name="{{ f.name }}" value="{{ answers.get(f.name, '') }}"
            {{ 'required' if f.required }}>
   {% elif f.type == "number" %}
-    <input type="number" step="any" name="{{ f.name }}"
+    <input type="number" step="any" min="0" inputmode="decimal" name="{{ f.name }}"
            value="{{ answers.get(f.name, '') }}" {{ 'required' if f.required }}>
   {% elif f.type == "date" %}
     <input type="date" name="{{ f.name }}" value="{{ answers.get(f.name, '') }}"
@@ -68,8 +68,8 @@
         <td>1.</td>
         {% for key, label in days %}
           {% set fn = prefix ~ key %}
-          <td><input type="number" step="any" min="0" name="{{ fn }}"
-                     value="{{ answers.get(fn, '') }}"></td>
+          <td><input type="number" step="any" min="0" inputmode="decimal"
+                     name="{{ fn }}" value="{{ answers.get(fn, '') }}"></td>
         {% endfor %}
       </tr>
     </tbody>

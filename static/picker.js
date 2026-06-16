@@ -2,6 +2,17 @@
 // .picker-input (visible text box) and a hidden input (the value submitted).
 document.querySelectorAll("[data-picker]").forEach(initPicker);
 
+// Positive-numbers-only enforcement for hours/number fields on A2A forms:
+// block sign and exponent characters, and strip any minus that gets pasted in.
+document.querySelectorAll('.a2a-form input[type="number"]').forEach((el) => {
+  el.addEventListener("keydown", (e) => {
+    if (["-", "+", "e", "E"].includes(e.key)) e.preventDefault();
+  });
+  el.addEventListener("input", () => {
+    if (el.value.includes("-")) el.value = el.value.replace(/-/g, "");
+  });
+});
+
 function initPicker(root) {
   const input = root.querySelector(".picker-input");
   const hidden = root.querySelector('input[type="hidden"]');

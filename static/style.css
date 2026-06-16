@@ -273,6 +273,14 @@ main { padding: 1.75rem 1rem; }
 
 .field-hint { margin: .35rem 0 0; color: var(--muted); font-size: .8rem; }
 
+/* Hide number-input spinner arrows on the A2A forms (type values directly). */
+.a2a-form input[type="number"]::-webkit-outer-spin-button,
+.a2a-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.a2a-form input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
 /* ---------- New Position page ---------- */
 .section-bar {
   background: linear-gradient(90deg, #0b5d57, #0f766e);

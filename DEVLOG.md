@@ -133,6 +133,14 @@
   both `step_new_position.html` and `step_replacement.html` to import it, so the two
   screens stay consistent. Both render verified via Flask test context.
 
+## 2026-06-16 — Number fields: positive-only, no spinners
+- Hours-per-week and the Mon–Sun working-pattern boxes (New Position + Replacement)
+  now reject negatives and have no up/down arrows.
+- `_form_macros.html`: number inputs get `min="0"` + `inputmode="decimal"`.
+- `style.css`: spinner arrows hidden on `.a2a-form input[type=number]`.
+- `picker.js`: blocks `-`/`+`/`e` keys and strips pasted minus on those inputs.
+- Decimals still allowed (e.g. 7.5 hours).
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).
