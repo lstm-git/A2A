@@ -22,7 +22,7 @@
     </select>
   {% elif f.type == "radio" %}
     {% set dflt = f.get('default') %}
-    <div class="radio-group">
+    <div class="radio-group{{ ' stacked' if f.get('stack') }}">
       {% for opt in f.options %}
         <label class="opt-inline">
           <input type="radio" name="{{ f.name }}" value="{{ opt }}"

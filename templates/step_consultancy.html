@@ -48,7 +48,15 @@
         </div>
       </div>
 
-      {{ F.row(step.fields, 'cy_vat_status', answers) }}
+      {# VAT status — wide control so the long radio options have room to wrap. #}
+      {% set vat = step.fields | selectattr('name','equalto','cy_vat_status') | first %}
+      <div class="form-row">
+        <label>{{ vat.label }} <span class="req">*</span>
+          {% if vat.help %}<span class="help" tabindex="0" data-tip="{{ vat.help }}">i</span>{% endif %}
+        </label>
+        <div class="control wide">{{ F.control(vat, answers) }}</div>
+      </div>
+
       {{ F.row(step.fields, 'cy_additional_pay', answers) }}
       {{ F.row(step.fields, 'cy_expenses_payable', answers) }}
       {{ F.conditional_field(step.fields, 'cy_expenses_detail', answers) }}
