@@ -8,8 +8,8 @@
 
     <form method="post" class="a2a-form">
 
-      {# Purpose carried over from the opening page (read-only). #}
-      {{ F.readonly_row('Purpose of Request', answers.get('purpose')) }}
+      {# Purpose of Request — extension-specific dropdown. #}
+      {{ F.row(step.fields, 'ex_request_type', answers) }}
 
       <div class="section-bar">Person Details</div>
 
@@ -21,6 +21,16 @@
       {{ F.readonly_row('Line Manager', answers.get('line_manager')) }}
 
       <div class="section-bar">Details of extension/hours change</div>
+
+      {# Purpose-driven questions (shown/hidden live based on Purpose of Request). #}
+      {{ F.conditional_field(step.fields, 'ex_extension_from', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_extension_to', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_current_contract_end', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_hours_effective_date', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_change_duration', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_change_details', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_multiple_positions', answers) }}
+      {{ F.conditional_field(step.fields, 'ex_other_positions_detail', answers) }}
 
       {# Weekly working hours — uniform with New Position / Replacement. #}
       {{ F.row(step.fields, 'ex_contract_basis', answers) }}

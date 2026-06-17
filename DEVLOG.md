@@ -215,6 +215,31 @@
   placeholder append was removed. Wizard order unchanged (Purpose → Extension → …).
 - New `templates/step_extension.html`; render-verified.
 
+## 2026-06-17 — Extension: Purpose-of-Request dropdown + conditional questions
+- Purpose of Request is now a required dropdown (`ex_request_type`) with 5 options;
+  each drives which follow-up questions show:
+  - **Conversion of fixed term contract to Permanent:** Extension from, Extension
+    to, Current fixed-term contract end date.
+  - **Extension of fixed-term / agency / funding (permanent):** Extension from,
+    Extension to (the same two; shown for all three).
+  - **Change to weekly working hours only (no contract extension):** Effective date
+    of change to working hours; "Is this an ongoing or temporary change?"
+    (Ongoing/Temporary — Temporary reveals "Please provide further details");
+    "Does this person have more than 1 position?" (Yes/No — Yes reveals "…affect
+    the person's other positions in any way").
+- **Mechanism:** new `conditional_field` macro reads each field's own `show_when`
+  metadata `(trigger, value|[values])`, so a row can show for **several** trigger
+  values (Extension from/to use the 4-value list `EXTENSION_DATE_PURPOSES`). The
+  `[data-show-when]` JS now tests list membership (values joined by `||`) and, when a
+  row hides, **clears its inputs and fires change/input** so nested conditionals
+  (Temporary → details, Yes → other-positions) collapse with their parent.
+- Conditional fields left **optional** (consistent with existing clinical-duties /
+  recruit-budget follow-ups — the generic show_when JS doesn't manage `required` on
+  hidden fields).
+- Files: `steps.py` (constants + 8 conditional fields), `_form_macros.html`
+  (`conditional_field`), `static/picker.js`, `templates/step_extension.html`.
+  Server-side initial show/hide verified across all purposes.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

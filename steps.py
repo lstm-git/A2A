@@ -154,7 +154,24 @@ WORK_PATTERN_DAYS = [
     ("sun", "Sunday"),
 ]
 
+EXTENSION_PURPOSES = [
+    "Conversion of fixed term contract to Permanent",
+    "Extension of fixed-term contract",
+    "Extension of agency contract",
+    "Extension of funding for permanent contract",
+    "Change to weekly working hours only (no contract extension)",
+]
+CONVERSION_PURPOSE = "Conversion of fixed term contract to Permanent"
+HOURS_CHANGE_PURPOSE = "Change to weekly working hours only (no contract extension)"
+CHANGE_DURATIONS = ["Ongoing", "Temporary"]
+# Extension from/to dates apply to every purpose except the hours-only change.
+EXTENSION_DATE_PURPOSES = [
+    p for p in EXTENSION_PURPOSES if p != HOURS_CHANGE_PURPOSE]
+
 _extension_fields = [
+    # Purpose of Request — shown at the top of the form (above Person Details).
+    {"name": "ex_request_type", "label": "Purpose of Request", "type": "select",
+     "options": EXTENSION_PURPOSES, "required": True, "section": "_top"},
     # --- Person Details ---
     {"name": "ex_employee_name", "label": "Employee/agency worker name",
      "type": "text", "required": True, "section": "Person Details"},
@@ -162,6 +179,41 @@ _extension_fields = [
      "required": True, "section": "Person Details"},
     # Department & Line Manager are display-only (carried from the Purpose page).
     # --- Details of extension/hours change ---
+    # Purpose-driven date questions (all conditional on ex_request_type).
+    # Extension from/to: every purpose except the hours-only change.
+    {"name": "ex_extension_from", "label": "Extension from", "type": "date",
+     "section": "Details of extension/hours change",
+     "show_when": ("ex_request_type", EXTENSION_DATE_PURPOSES)},
+    {"name": "ex_extension_to", "label": "Extension to", "type": "date",
+     "section": "Details of extension/hours change",
+     "show_when": ("ex_request_type", EXTENSION_DATE_PURPOSES)},
+    # Conversion to permanent only.
+    {"name": "ex_current_contract_end",
+     "label": "Current fixed-term contract end date", "type": "date",
+     "section": "Details of extension/hours change",
+     "show_when": ("ex_request_type", [CONVERSION_PURPOSE])},
+    # Hours-only change questions.
+    {"name": "ex_hours_effective_date",
+     "label": "Effective date of change to working hours", "type": "date",
+     "section": "Details of extension/hours change",
+     "show_when": ("ex_request_type", [HOURS_CHANGE_PURPOSE])},
+    {"name": "ex_change_duration",
+     "label": "Is this an ongoing or temporary change?", "type": "radio",
+     "options": CHANGE_DURATIONS,
+     "section": "Details of extension/hours change",
+     "show_when": ("ex_request_type", [HOURS_CHANGE_PURPOSE])},
+    {"name": "ex_change_details", "label": "Please provide further details",
+     "type": "textarea", "section": "Details of extension/hours change",
+     "show_when": ("ex_change_duration", "Temporary")},
+    {"name": "ex_multiple_positions",
+     "label": "Does this person have more than 1 position?", "type": "radio",
+     "options": YES_NO, "section": "Details of extension/hours change",
+     "show_when": ("ex_request_type", [HOURS_CHANGE_PURPOSE])},
+    {"name": "ex_other_positions_detail",
+     "label": "Please state whether this hours change will affect the person's "
+              "other positions in any way", "type": "textarea",
+     "section": "Details of extension/hours change",
+     "show_when": ("ex_multiple_positions", "Yes")},
     # Weekly working hours: same Full-time/Part-time mechanism as New Position /
     # Replacement (uniform). Part-time reveals the hours field below.
     {"name": "ex_contract_basis", "label": "Contract Basis", "type": "select",

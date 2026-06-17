@@ -34,10 +34,12 @@ document.querySelectorAll('select[name$="_classification"]').forEach((sel) => {
 });
 
 // Generic conditional follow-up rows: show a wrapped row only when its trigger
-// field (radio group or select) currently has the configured value.
+// field (radio group or select) currently holds one of the configured values
+// (data-show-value may list several, joined by "||"). When a row becomes hidden
+// its inputs are cleared so nested conditionals collapse with it.
 document.querySelectorAll("[data-show-when]").forEach((wrap) => {
   const name = wrap.dataset.showWhen;
-  const value = wrap.dataset.showValue;
+  const values = (wrap.dataset.showValue || "").split("||");
   const controls = document.querySelectorAll('[name="' + name + '"]');
   function current() {
     const radios = [...controls].filter((c) => c.type === "radio");
@@ -48,7 +50,18 @@ document.querySelectorAll("[data-show-when]").forEach((wrap) => {
     return controls[0] ? controls[0].value : "";
   }
   function sync() {
-    wrap.hidden = current() !== value;
+    const show = values.includes(current());
+    if (wrap.hidden === !show) return; // no change since last sync
+    wrap.hidden = !show;
+    if (!show) {
+      // Clear contained inputs and notify dependents so they collapse too.
+      wrap.querySelectorAll("input, select, textarea").forEach((el) => {
+        if (el.type === "radio" || el.type === "checkbox") el.checked = false;
+        else el.value = "";
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    }
   }
   controls.forEach((c) => c.addEventListener("change", sync));
   sync();

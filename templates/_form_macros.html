@@ -66,6 +66,20 @@
   </div>
 {% endmacro %}
 
+{# Conditional row driven by a field's own `show_when` metadata: (trigger, value),
+   where value may be a single string or a list of accepted values. Shown when the
+   trigger field currently holds one of those values (toggled live by picker.js). #}
+{% macro conditional_field(fields, name, answers) %}
+  {% set f = fields | selectattr('name', 'equalto', name) | first %}
+  {% set trigger = f.show_when[0] %}
+  {% set value = f.show_when[1] %}
+  {% set values = value if (value is iterable and value is not string) else [value] %}
+  <div data-show-when="{{ trigger }}" data-show-value="{{ values | join('||') }}"
+       {{ '' if answers.get(trigger) in values else 'hidden' }}>
+    {{ row(fields, name, answers) }}
+  </div>
+{% endmacro %}
+
 {# Read-only display row (used for fields carried over from an earlier page). #}
 {% macro readonly_row(label, value, required=True) %}
   <div class="form-row">
