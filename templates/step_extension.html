@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_form_macros.html" as F %}
+
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">Extension</h2>
+
+    <form method="post" class="a2a-form">
+
+      {# Purpose carried over from the opening page (read-only). #}
+      {{ F.readonly_row('Purpose of Request', answers.get('purpose')) }}
+
+      <div class="section-bar">Person Details</div>
+
+      {{ F.row(step.fields, 'ex_employee_name', answers) }}
+      {{ F.row(step.fields, 'ex_job_title', answers) }}
+
+      {# Department & Line Manager carried over from the Purpose page (read-only). #}
+      {{ F.readonly_row('Department', answers.get('department')) }}
+      {{ F.readonly_row('Line Manager', answers.get('line_manager')) }}
+
+      <div class="section-bar">Details of extension/hours change</div>
+
+      {# Weekly working hours — uniform with New Position / Replacement. #}
+      {{ F.row(step.fields, 'ex_contract_basis', answers) }}
+      {{ F.conditional_row('ex_contract_basis', 'Part-time', 'ex_part_time_hours', step.fields, answers) }}
+
+      {# Working pattern — required; each day capped at 12h and the entered pattern
+         must sum to the weekly hours (35 for Full-time, else the Part-time value). #}
+      <div class="form-row">
+        <label>Please confirm working pattern for this position <span class="req">*</span></label>
+        <div class="control wide">{{ F.workpattern(answers, 'ex_hours_', basis='ex_contract_basis', pthours='ex_part_time_hours') }}</div>
+      </div>
+
+      {{ F.row(step.fields, 'ex_grade_change', answers) }}
+      {{ F.row(step.fields, 'ex_spinal_point_change', answers) }}
+      {{ F.row(step.fields, 'ex_location', answers) }}
+
+      <div class="section-bar">Justification</div>
+
+      {{ F.row(step.fields, 'ex_justification', answers) }}
+
+      {{ F.attachments_placeholder() }}
+
+      <div class="actions">
+        {% if prev_id %}
+          <a class="btn secondary" href="{{ url_for('step', step_id=prev_id) }}">Back</a>
+        {% endif %}
+        <button class="btn" type="submit">Next</button>
+      </div>
+
+    </form>
+  </section>
+</div>
+{% endblock %}

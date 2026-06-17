@@ -199,6 +199,22 @@
   `templates/step_replacement.html`, `static/picker.js`. Both templates render-verified.
 - **Decisions (you):** part-time hours optional; working pattern always required.
 
+## 2026-06-17 — Extension screen built out
+- Replaced the 3-field Extension placeholder (post/reason/end-date) with the full
+  form from the supplied screenshot. Fields prefixed `ex_`, three sections:
+  - **Person Details:** Employee/agency worker name, Job Title, read-only
+    Department + Line Manager (carried from Purpose). Purpose of Request shown
+    read-only at the top.
+  - **Details of extension/hours change:** Contract Basis (Full-time/Part-time) +
+    conditional part-time hours + required working pattern — **uniform with New
+    Position / Replacement** (per your choice). Then grade-change, spinal-point-change
+    (free text, "or No change"), work location (city/country).
+  - **Justification:** Justification + attachments placeholder.
+- **Structure note:** the Extension step is now defined *after* the shared constants
+  (CONTRACT_BASES / WORK_PATTERN_DAYS) in `steps.py`, since it reuses them; the early
+  placeholder append was removed. Wizard order unchanged (Purpose → Extension → …).
+- New `templates/step_extension.html`; render-verified.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

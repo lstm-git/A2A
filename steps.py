@@ -118,16 +118,8 @@ STEPS.append(Step(
     ],
 ))
 
-# 2. Purpose-specific sub-steps (only the chosen one shows)
-STEPS.append(Step(
-    "extension", "Extension",
-    condition=lambda a: a.get("purpose") == "Extension",
-    fields=[
-        {"name": "extension_post", "label": "Post being extended", "type": "text"},
-        {"name": "extension_reason", "label": "Reason for extension", "type": "textarea"},
-        {"name": "extension_end_date", "label": "New end date", "type": "date"},
-    ],
-))
+# 2. Purpose-specific sub-steps (only the chosen one shows). Extension is built
+#    after the shared constants below (it reuses CONTRACT_BASES / WORK_PATTERN_DAYS).
 POSITION_TYPES = ["Staff", "Agency", "Work Placement"]
 PAYSCALES = [
     "HERA (Grades 1-9)",
@@ -161,6 +153,56 @@ WORK_PATTERN_DAYS = [
     ("thu", "Thursday"), ("fri", "Friday"), ("sat", "Saturday"),
     ("sun", "Sunday"),
 ]
+
+_extension_fields = [
+    # --- Person Details ---
+    {"name": "ex_employee_name", "label": "Employee/agency worker name",
+     "type": "text", "required": True, "section": "Person Details"},
+    {"name": "ex_job_title", "label": "Job Title", "type": "text",
+     "required": True, "section": "Person Details"},
+    # Department & Line Manager are display-only (carried from the Purpose page).
+    # --- Details of extension/hours change ---
+    # Weekly working hours: same Full-time/Part-time mechanism as New Position /
+    # Replacement (uniform). Part-time reveals the hours field below.
+    {"name": "ex_contract_basis", "label": "Contract Basis", "type": "select",
+     "options": CONTRACT_BASES, "required": True,
+     "section": "Details of extension/hours change"},
+    {"name": "ex_part_time_hours",
+     "label": "Please enter number of hours to be worked per week",
+     "type": "number", "section": "Details of extension/hours change",
+     "show_when": ("ex_contract_basis", "Part-time")},
+    # Working pattern (ex_hours_<day>) is rendered as a grid in the template.
+    {"name": "ex_grade_change",
+     "label": "Please confirm whether any change to the grade for this position",
+     "type": "text", "required": True,
+     "section": "Details of extension/hours change",
+     "help": "State the new grade, or confirm 'No change'."},
+    {"name": "ex_spinal_point_change",
+     "label": "Please confirm whether any change to the spinal point for this "
+              "position",
+     "type": "text", "required": True,
+     "section": "Details of extension/hours change",
+     "help": "State the new spinal point, or confirm 'No change'."},
+    {"name": "ex_location",
+     "label": "Please confirm person's work location (city/country)",
+     "type": "text", "required": True,
+     "section": "Details of extension/hours change"},
+    # --- Justification ---
+    {"name": "ex_justification", "label": "Justification", "type": "textarea",
+     "required": True, "section": "Justification"},
+]
+# Working-pattern hours, one number field per day (Mon-Sun).
+_extension_fields += [
+    {"name": f"ex_hours_{key}", "label": label, "type": "number",
+     "section": "Details of extension/hours change", "widget": "workpattern"}
+    for key, label in WORK_PATTERN_DAYS
+]
+
+STEPS.append(Step(
+    "extension", "Extension",
+    condition=lambda a: a.get("purpose") == "Extension",
+    fields=_extension_fields,
+))
 
 _new_position_fields = [
     # --- Position Details ---
