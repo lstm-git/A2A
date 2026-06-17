@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% import "_form_macros.html" as F %}
+
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">Consultancy</h2>
+
+    <form method="post" class="a2a-form">
+
+      {{ F.row(step.fields, 'cy_approval_for', answers) }}
+
+      {# Department carried over from the Purpose page (read-only). #}
+      {{ F.readonly_row('Department', answers.get('department')) }}
+
+      {{ F.row(step.fields, 'cy_justification', answers) }}
+      {{ F.row(step.fields, 'cy_overseer_name', answers) }}
+      {{ F.row(step.fields, 'cy_lstm_manager', answers) }}
+
+      <div class="section-bar">Assignment Details</div>
+
+      {{ F.row(step.fields, 'cy_job_title', answers) }}
+      {{ F.row(step.fields, 'cy_start_date', answers) }}
+      {{ F.row(step.fields, 'cy_end_date', answers) }}
+      {{ F.row(step.fields, 'cy_contract_type', answers) }}
+      {{ F.row(step.fields, 'cy_location', answers) }}
+
+      {# Pay Details — rate / currency / frequency on one row. #}
+      <div class="form-row">
+        <label>Pay Details <span class="req">*</span></label>
+        <div class="control wide">
+          <table class="paydetails">
+            <thead>
+              <tr>
+                <th>Rate of Pay <span class="req">*</span></th>
+                <th>Currency <span class="req">*</span></th>
+                <th>Frequency <span class="req">*</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ F.control(step.fields | selectattr('name','equalto','cy_rate_of_pay') | first, answers) }}</td>
+                <td>{{ F.control(step.fields | selectattr('name','equalto','cy_currency') | first, answers) }}</td>
+                <td>{{ F.control(step.fields | selectattr('name','equalto','cy_frequency') | first, answers) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {{ F.row(step.fields, 'cy_vat_status', answers) }}
+      {{ F.row(step.fields, 'cy_additional_pay', answers) }}
+      {{ F.row(step.fields, 'cy_expenses_payable', answers) }}
+
+      <div class="section-bar">Consultant Details</div>
+
+      {{ F.row(step.fields, 'cy_named_consultant', answers) }}
+      {{ F.row(step.fields, 'cy_personal_data', answers) }}
+      {{ F.row(step.fields, 'cy_child_contact', answers) }}
+
+      {# Required consultancy documentation — upload not built yet (placeholder). #}
+      <div class="form-row">
+        <label>Required consultancy documentation <span class="req">*</span>
+          <span class="help" tabindex="0" data-tip="Upload the completed documents listed opposite. The A2A cannot progress without them.">i</span>
+        </label>
+        <div class="control wide">
+          <div class="banner note">
+            <p style="margin:0 0 .5rem">Please ensure that you have attached completed versions of the documents listed below.</p>
+            <ul style="margin:.25rem 0 .5rem 1.1rem">
+              <li>Terms of Reference (ToR)</li>
+              <li>Status Determination Form — version to be completed by the consultant</li>
+              <li>Status Determination Form — version to be completed by the manager</li>
+              <li>Consultant's CV</li>
+            </ul>
+            <p style="margin:.25rem 0 0">Your A2A will not be able to be progressed without the relevant consultancy documentation having been attached to this step.</p>
+            <p style="margin:.5rem 0 0">Blank 'Status Determination' and 'Terms of Reference (ToR)' templates can be accessed via the 'Attachments' section below this field.</p>
+          </div>
+        </div>
+      </div>
+
+      {{ F.attachments_placeholder() }}
+
+      <div class="actions">
+        {% if prev_id %}
+          <a class="btn secondary" href="{{ url_for('step', step_id=prev_id) }}">Back</a>
+        {% endif %}
+        <button class="btn" type="submit">Next</button>
+      </div>
+
+    </form>
+  </section>
+</div>
+{% endblock %}

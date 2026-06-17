@@ -240,6 +240,29 @@
   (`conditional_field`), `static/picker.js`, `templates/step_extension.html`.
   Server-side initial show/hide verified across all purposes.
 
+## 2026-06-17 — Consultancy screen built out
+- Built the full Consultancy page from the supplied screenshot (`cy_` prefix,
+  custom `templates/step_consultancy.html`):
+  - **Top:** Approval required for (select), read-only Department (carried over),
+    Justification for Consultancy, Assignment Overseer Name, LSTM Manager Name.
+  - **Assignment Details:** Job Title, Start Date, End-Date, Contract Type (select,
+    help), Location, **Pay Details** (Rate of Pay / Currency / Frequency on one row
+    via a `.paydetails` table), VAT status determination (select, help), Additional
+    pay details (optional), Are expenses payable? (Yes/No).
+  - **Consultant Details:** Do you have a named consultant? / Will the consultant be
+    accessing personal data? (help) / contact with children & vulnerable adults?
+    (all Yes/No), then the required-documentation block: a yellow `banner note`
+    listing the four docs (ToR, two Status Determination forms, Consultant's CV) +
+    the existing attachments placeholder (upload still not built).
+- New `.paydetails` table CSS (matches `.workpattern`).
+- **Placeholder option lists (need real values):** `CONSULTANCY_APPROVAL_FOR`,
+  `CONSULTANCY_CONTRACT_TYPES`, `VAT_STATUS_OPTIONS`, `PAY_CURRENCIES`,
+  `PAY_FREQUENCIES` in `steps.py` are guesses — same situation as the early
+  Department list. **TODO (you):** supply the real options + the exact help/tooltip
+  wording for the Contract Type / VAT / personal-data info icons.
+- Files: `steps.py`, `templates/step_consultancy.html`, `static/style.css`.
+  Render-verified (all 18 fields, both sections, pay table, banner present).
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

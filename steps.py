@@ -404,15 +404,81 @@ STEPS.append(Step(
     condition=lambda a: a.get("purpose") == "Replacement",
     fields=_replacement_fields,
 ))
-STEPS.append(Step(
-    "consultancy", "Consultancy",
-    condition=lambda a: a.get("purpose") == "Consultancy",
-    fields=[
-        {"name": "consultancy_supplier", "label": "Consultant / supplier", "type": "text"},
-        {"name": "consultancy_scope", "label": "Scope of work", "type": "textarea"},
-        {"name": "consultancy_value", "label": "Estimated value (£)", "type": "number"},
-    ],
-))
+# Consultancy. NOTE: the option lists below are placeholders pending the real
+# values (mirrors how the Department list started). Flagged in the DEVLOG.
+CONSULTANCY_APPROVAL_FOR = [
+    "New consultancy", "Extension of existing consultancy"]
+CONSULTANCY_CONTRACT_TYPES = [
+    "Individual (self-employed)", "Limited company", "Agency / intermediary"]
+VAT_STATUS_OPTIONS = [
+    "VAT registered", "Not VAT registered", "To be confirmed"]
+PAY_CURRENCIES = ["GBP (£)", "USD ($)", "EUR (€)"]
+PAY_FREQUENCIES = [
+    "Per hour", "Per day", "Per week", "Per month", "Per annum", "Fixed total"]
+
+_consultancy_fields = [
+    {"name": "cy_approval_for", "label": "Approval required for", "type": "select",
+     "options": CONSULTANCY_APPROVAL_FOR, "required": True, "section": "_top",
+     "help": "Select what this approval request is for."},
+    # Department is display-only (carried from the Purpose page).
+    {"name": "cy_justification", "label": "Justification for Consultancy",
+     "type": "textarea", "required": True, "section": "_top"},
+    {"name": "cy_overseer_name", "label": "Assignment Overseer Name",
+     "type": "text", "required": True, "section": "_top"},
+    {"name": "cy_lstm_manager", "label": "LSTM Manager Name", "type": "text",
+     "required": True, "section": "_top"},
+    # --- Assignment Details ---
+    {"name": "cy_job_title", "label": "Assignment Job Title", "type": "text",
+     "required": True, "section": "Assignment Details"},
+    {"name": "cy_start_date", "label": "Assignment Start Date", "type": "date",
+     "required": True, "section": "Assignment Details"},
+    {"name": "cy_end_date", "label": "Assignment End-Date", "type": "date",
+     "required": True, "section": "Assignment Details"},
+    {"name": "cy_contract_type", "label": "Assignment Contract Type",
+     "type": "select", "options": CONSULTANCY_CONTRACT_TYPES, "required": True,
+     "section": "Assignment Details",
+     "help": "Select the contract type for this assignment. (Click for guidance.)"},
+    {"name": "cy_location", "label": "Assignment Location", "type": "text",
+     "required": True, "section": "Assignment Details"},
+    # Pay Details (rate / currency / frequency) rendered as a row in the template.
+    {"name": "cy_rate_of_pay", "label": "Rate of Pay", "type": "number",
+     "required": True, "section": "Assignment Details"},
+    {"name": "cy_currency", "label": "Currency", "type": "select",
+     "options": PAY_CURRENCIES, "required": True, "section": "Assignment Details"},
+    {"name": "cy_frequency", "label": "Frequency", "type": "select",
+     "options": PAY_FREQUENCIES, "required": True, "section": "Assignment Details"},
+    {"name": "cy_vat_status", "label": "VAT status determination",
+     "type": "select", "options": VAT_STATUS_OPTIONS, "required": True,
+     "section": "Assignment Details",
+     "help": "Determine the VAT status for this consultancy. (Click for guidance.)"},
+    {"name": "cy_additional_pay", "label": "Additional pay details",
+     "type": "textarea", "section": "Assignment Details",
+     "help": "Any additional pay arrangements, allowances or notes."},
+    {"name": "cy_expenses_payable", "label": "Are expenses payable?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Assignment Details"},
+    # --- Consultant Details ---
+    {"name": "cy_named_consultant",
+     "label": "Do you have a named consultant for this assignment?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Consultant Details"},
+    {"name": "cy_personal_data",
+     "label": "Will the consultant be accessing personal data in the course of "
+              "their duties?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Consultant Details",
+     "help": "Will the consultant access personal/special-category data while "
+             "carrying out the work?"},
+    {"name": "cy_child_contact",
+     "label": "Will this role have direct or indirect contact with children "
+              "and/or vulnerable adults?",
+     "type": "radio", "options": YES_NO, "required": True,
+     "section": "Consultant Details"},
+]
+
+STEPS.append(Step("consultancy", "Consultancy",
+                  condition=lambda a: a.get("purpose") == "Consultancy",
+                  fields=_consultancy_fields))
 
 # 3. Sources of Funding 1-5 (each can spawn the next)
 for n in range(1, 6):
