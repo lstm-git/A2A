@@ -14,13 +14,14 @@
   {% elif f.type == "textarea" %}
     <textarea name="{{ f.name }}" rows="3" {{ 'required' if f.required }}>{{ answers.get(f.name, '') }}</textarea>
   {% elif f.type == "select" %}
-    <select name="{{ f.name }}" {{ 'required' if f.required }}{{ ' data-fulltext' if f.get('fulltext') }}>
+    <select name="{{ f.name }}" {{ 'required' if f.required }}>
       <option value="" {{ 'selected' if not answers.get(f.name) }}>— Select —</option>
       {% for opt in f.options %}
-        <option value="{{ opt }}" {{ 'selected' if answers.get(f.name) == opt }}>{{ opt }}</option>
+        {% set ov = opt.value if opt is mapping else opt %}
+        {% set ol = opt.label if opt is mapping else opt %}
+        <option value="{{ ov }}" {{ 'selected' if answers.get(f.name) == ov }}>{{ ol }}</option>
       {% endfor %}
     </select>
-    {% if f.get('fulltext') %}<p class="select-fulltext{{ ' empty' if not answers.get(f.name) }}">{{ answers.get(f.name, '') }}</p>{% endif %}
   {% elif f.type == "radio" %}
     {% set dflt = f.get('default') %}
     <div class="radio-group{{ ' stacked' if f.get('stack') }}">

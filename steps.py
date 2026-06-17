@@ -411,11 +411,17 @@ CONSULTANCY_APPROVAL_FOR = [
 CONSULTANCY_CONTRACT_TYPES = [
     "Contingent Worker", "UK Consultancy", "Non-UK Consultancy",
     "Contract for Services"]
+# Short labels shown in the dropdown; the full descriptive wording is the stored
+# value (so the record/summary keeps the exact text). Options may be a plain
+# string or a {"label", "value"} pair.
 VAT_STATUS_OPTIONS = [
-    "VAT not applicable due to exempt service being provided",
-    "Service is subject to VAT but as service is provided overseas there is no "
-    "VAT on invoice (but reverse charge VAT will be applied)",
-    "Service is subject to VAT and provided in the UK so VAT on invoice"]
+    {"label": "Not applicable — exempt service",
+     "value": "VAT not applicable due to exempt service being provided"},
+    {"label": "Subject to VAT — provided overseas (reverse charge)",
+     "value": "Service is subject to VAT but as service is provided overseas "
+              "there is no VAT on invoice (but reverse charge VAT will be applied)"},
+    {"label": "Subject to VAT — provided in the UK (VAT on invoice)",
+     "value": "Service is subject to VAT and provided in the UK so VAT on invoice"}]
 PAY_CURRENCIES = ["GBP (£)", "USD ($)", "EUR (€)"]
 PAY_FREQUENCIES = [
     "Per hour", "Per day", "Per week", "Per month", "Per annum", "Fixed total"]
@@ -451,11 +457,9 @@ _consultancy_fields = [
      "options": PAY_CURRENCIES, "required": True, "section": "Assignment Details"},
     {"name": "cy_frequency", "label": "Frequency", "type": "select",
      "options": PAY_FREQUENCIES, "required": True, "section": "Assignment Details"},
-    # Select with `fulltext`: the full chosen option is echoed below the dropdown
-    # (the long options would otherwise be truncated in the select box).
     {"name": "cy_vat_status", "label": "VAT status determination",
      "type": "select", "options": VAT_STATUS_OPTIONS, "required": True,
-     "fulltext": True, "section": "Assignment Details",
+     "section": "Assignment Details",
      "help": "Determine the VAT status for this consultancy. (Click for guidance.)"},
     {"name": "cy_additional_pay", "label": "Additional pay details",
      "type": "textarea", "section": "Assignment Details",
