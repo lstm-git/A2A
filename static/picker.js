@@ -13,6 +13,19 @@ document.querySelectorAll('.a2a-form input[type="number"]').forEach((el) => {
   });
 });
 
+// Selects flagged with data-fulltext echo the full chosen option text below the
+// dropdown (for long options that the select box itself truncates).
+document.querySelectorAll("select[data-fulltext]").forEach((sel) => {
+  const note = sel.parentElement.querySelector(".select-fulltext");
+  if (!note) return;
+  function sync() {
+    note.textContent = sel.value;
+    note.classList.toggle("empty", sel.value === "");
+  }
+  sel.addEventListener("change", sync);
+  sync();
+});
+
 // Position classification -> code auto-fill. Authoritative mapping lives in
 // steps.py (CLASSIFICATION_CODES); this copy only drives the live display.
 const CLASSIFICATION_CODES = {

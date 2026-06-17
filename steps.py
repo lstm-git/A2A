@@ -451,10 +451,11 @@ _consultancy_fields = [
      "options": PAY_CURRENCIES, "required": True, "section": "Assignment Details"},
     {"name": "cy_frequency", "label": "Frequency", "type": "select",
      "options": PAY_FREQUENCIES, "required": True, "section": "Assignment Details"},
-    # Radio (not select) so the long descriptive options wrap and stay fully visible.
+    # Select with `fulltext`: the full chosen option is echoed below the dropdown
+    # (the long options would otherwise be truncated in the select box).
     {"name": "cy_vat_status", "label": "VAT status determination",
-     "type": "radio", "options": VAT_STATUS_OPTIONS, "required": True,
-     "stack": True, "section": "Assignment Details",
+     "type": "select", "options": VAT_STATUS_OPTIONS, "required": True,
+     "fulltext": True, "section": "Assignment Details",
      "help": "Determine the VAT status for this consultancy. (Click for guidance.)"},
     {"name": "cy_additional_pay", "label": "Additional pay details",
      "type": "textarea", "section": "Assignment Details",
