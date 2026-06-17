@@ -51,12 +51,23 @@
       {{ F.row(step.fields, 'cy_vat_status', answers) }}
       {{ F.row(step.fields, 'cy_additional_pay', answers) }}
       {{ F.row(step.fields, 'cy_expenses_payable', answers) }}
+      {{ F.conditional_field(step.fields, 'cy_expenses_detail', answers) }}
 
       <div class="section-bar">Consultant Details</div>
 
       {{ F.row(step.fields, 'cy_named_consultant', answers) }}
+      {# Yes -> named consultant details. #}
+      {{ F.conditional_field(step.fields, 'cy_consultant_name', answers) }}
+      {{ F.conditional_field(step.fields, 'cy_consultant_chosen', answers) }}
+      {# No -> recruitment / advertising branch. #}
+      {{ F.conditional_field(step.fields, 'cy_hr_advertise', answers) }}
+      {{ F.conditional_field(step.fields, 'cy_advert_source', answers) }}
+      {{ F.conditional_field(step.fields, 'cy_recruit_budget', answers) }}
+      {{ F.conditional_field(step.fields, 'cy_recruit_budget_amount', answers) }}
+
       {{ F.row(step.fields, 'cy_personal_data', answers) }}
       {{ F.row(step.fields, 'cy_child_contact', answers) }}
+      {{ F.conditional_field(step.fields, 'cy_child_contact_detail', answers) }}
 
       {# Required consultancy documentation — upload not built yet (placeholder). #}
       <div class="form-row">

@@ -21,11 +21,13 @@
       {% endfor %}
     </select>
   {% elif f.type == "radio" %}
+    {% set dflt = f.get('default') %}
     <div class="radio-group">
       {% for opt in f.options %}
         <label class="opt-inline">
           <input type="radio" name="{{ f.name }}" value="{{ opt }}"
-                 {{ 'checked' if answers.get(f.name) == opt }}
+                 {{ 'checked' if answers.get(f.name, dflt) == opt }}
+                 {{ 'data-default' if dflt == opt }}
                  {{ 'required' if f.required }}> {{ opt }}
         </label>
       {% endfor %}

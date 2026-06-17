@@ -54,10 +54,14 @@ document.querySelectorAll("[data-show-when]").forEach((wrap) => {
     if (wrap.hidden === !show) return; // no change since last sync
     wrap.hidden = !show;
     if (!show) {
-      // Clear contained inputs and notify dependents so they collapse too.
+      // Reset contained inputs (radios fall back to their default, if any) and
+      // notify dependents so they collapse too.
       wrap.querySelectorAll("input, select, textarea").forEach((el) => {
-        if (el.type === "radio" || el.type === "checkbox") el.checked = false;
-        else el.value = "";
+        if (el.type === "radio" || el.type === "checkbox") {
+          el.checked = el.hasAttribute("data-default");
+        } else {
+          el.value = "";
+        }
         el.dispatchEvent(new Event("change", { bubbles: true }));
         el.dispatchEvent(new Event("input", { bubbles: true }));
       });

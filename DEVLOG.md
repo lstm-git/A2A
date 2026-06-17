@@ -263,6 +263,28 @@
 - Files: `steps.py`, `templates/step_consultancy.html`, `static/style.css`.
   Render-verified (all 18 fields, both sections, pay table, banner present).
 
+## 2026-06-17 — Consultancy: real option lists + conditional logic
+- **Real option lists supplied** (replaced placeholders): Assignment Contract Type
+  (Contingent Worker / UK Consultancy / Non-UK Consultancy / Contract for Services)
+  and VAT status determination (3 long descriptive options). Approval-for / currency
+  / frequency lists still placeholders.
+- **Conditional questions added** (all via the `show_when` + `conditional_field`
+  mechanism, incl. nested cascade):
+  - Are expenses payable? **Yes** → Details of expenses payable (textarea).
+  - Named consultant? **Yes** → Name of Consultant (text) + How was the consultant
+    chosen (textarea). **No** → "Do you require LSTM HR Recruitment Team to advertise…"
+    (Yes/No, **default No**); if **Yes** → Suggested source for advertisement
+    (textarea) + "Is there a budget…" (Yes/No, **default No**); if that's **Yes** →
+    Please enter recruitment budget (text).
+  - Children/vulnerable-adults contact? **Yes** → Please provide details (textarea).
+- **New: radio `default`** support. `control` macro pre-checks the default option and
+  marks it `data-default`; the show-when JS now resets hidden radios to their default
+  (not just unchecked), so the "default No" reasserts when a branch collapses.
+- Conditional text/textarea fields left optional (hidden-required pitfall); the two
+  defaulted Yes/No radios are required but always satisfied by the default.
+- Files: `steps.py`, `templates/_form_macros.html`, `static/picker.js`,
+  `templates/step_consultancy.html`. All branches render-verified.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

@@ -409,9 +409,13 @@ STEPS.append(Step(
 CONSULTANCY_APPROVAL_FOR = [
     "New consultancy", "Extension of existing consultancy"]
 CONSULTANCY_CONTRACT_TYPES = [
-    "Individual (self-employed)", "Limited company", "Agency / intermediary"]
+    "Contingent Worker", "UK Consultancy", "Non-UK Consultancy",
+    "Contract for Services"]
 VAT_STATUS_OPTIONS = [
-    "VAT registered", "Not VAT registered", "To be confirmed"]
+    "VAT not applicable due to exempt service being provided",
+    "Service is subject to VAT but as service is provided overseas there is no "
+    "VAT on invoice (but reverse charge VAT will be applied)",
+    "Service is subject to VAT and provided in the UK so VAT on invoice"]
 PAY_CURRENCIES = ["GBP (£)", "USD ($)", "EUR (€)"]
 PAY_FREQUENCIES = [
     "Per hour", "Per day", "Per week", "Per month", "Per annum", "Fixed total"]
@@ -457,11 +461,39 @@ _consultancy_fields = [
     {"name": "cy_expenses_payable", "label": "Are expenses payable?",
      "type": "radio", "options": YES_NO, "required": True,
      "section": "Assignment Details"},
+    {"name": "cy_expenses_detail", "label": "Details of expenses payable",
+     "type": "textarea", "section": "Assignment Details",
+     "show_when": ("cy_expenses_payable", "Yes")},
     # --- Consultant Details ---
     {"name": "cy_named_consultant",
      "label": "Do you have a named consultant for this assignment?",
      "type": "radio", "options": YES_NO, "required": True,
      "section": "Consultant Details"},
+    # Named consultant = Yes.
+    {"name": "cy_consultant_name", "label": "Name of Consultant", "type": "text",
+     "section": "Consultant Details",
+     "show_when": ("cy_named_consultant", "Yes")},
+    {"name": "cy_consultant_chosen", "label": "How was the consultant chosen?",
+     "type": "textarea", "section": "Consultant Details",
+     "show_when": ("cy_named_consultant", "Yes")},
+    # Named consultant = No -> recruitment branch (defaults No).
+    {"name": "cy_hr_advertise",
+     "label": "Do you require LSTM HR Recruitment Team to advertise for this "
+              "Consultancy?",
+     "type": "radio", "options": YES_NO, "default": "No", "required": True,
+     "section": "Consultant Details",
+     "show_when": ("cy_named_consultant", "No")},
+    {"name": "cy_advert_source", "label": "Suggested source for advertisement",
+     "type": "textarea", "section": "Consultant Details",
+     "show_when": ("cy_hr_advertise", "Yes")},
+    {"name": "cy_recruit_budget",
+     "label": "Is there a budget available for recruitment purposes?",
+     "type": "radio", "options": YES_NO, "default": "No", "required": True,
+     "section": "Consultant Details",
+     "show_when": ("cy_hr_advertise", "Yes")},
+    {"name": "cy_recruit_budget_amount", "label": "Please enter recruitment budget",
+     "type": "text", "section": "Consultant Details",
+     "show_when": ("cy_recruit_budget", "Yes")},
     {"name": "cy_personal_data",
      "label": "Will the consultant be accessing personal data in the course of "
               "their duties?",
@@ -474,6 +506,9 @@ _consultancy_fields = [
               "and/or vulnerable adults?",
      "type": "radio", "options": YES_NO, "required": True,
      "section": "Consultant Details"},
+    {"name": "cy_child_contact_detail", "label": "Please provide details",
+     "type": "textarea", "section": "Consultant Details",
+     "show_when": ("cy_child_contact", "Yes")},
 ]
 
 STEPS.append(Step("consultancy", "Consultancy",
