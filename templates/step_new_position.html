@@ -25,11 +25,13 @@
       {{ F.classification_code('np_classification_code', answers) }}
       {{ F.conditional_row('np_classification', 'Other', 'np_clinical_duties', step.fields, answers) }}
       {{ F.row(step.fields, 'np_contract_basis', answers) }}
+      {{ F.conditional_row('np_contract_basis', 'Part-time', 'np_part_time_hours', step.fields, answers) }}
 
-      {# Working pattern — hours per day, Mon-Sun (each capped at 12h). #}
+      {# Working pattern — hours per day, Mon-Sun (each capped at 12h). Required;
+         must sum to the weekly hours (35 for Full-time, else the Part-time value). #}
       <div class="form-row">
-        <label>Please enter working pattern</label>
-        <div class="control wide">{{ F.workpattern(answers, 'np_hours_') }}</div>
+        <label>Please enter working pattern <span class="req">*</span></label>
+        <div class="control wide">{{ F.workpattern(answers, 'np_hours_', basis='np_contract_basis', pthours='np_part_time_hours') }}</div>
       </div>
 
       {{ F.row(step.fields, 'np_start_date', answers) }}

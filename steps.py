@@ -192,6 +192,11 @@ _new_position_fields = [
      "show_when": ("np_classification", "Other")},
     {"name": "np_contract_basis", "label": "Contract Basis", "type": "select",
      "options": CONTRACT_BASES, "required": True, "section": "Position Details"},
+    # Shown only for Part-time; Full-time implies 35 hours (from the option label).
+    {"name": "np_part_time_hours",
+     "label": "Please enter number of hours to be worked per week",
+     "type": "number", "section": "Position Details",
+     "show_when": ("np_contract_basis", "Part-time")},
     # Working pattern (np_hours_<day>) is rendered as a grid in the template.
     {"name": "np_start_date", "label": "Estimated position start-date",
      "type": "date", "required": True, "section": "Position Details"},
@@ -253,11 +258,14 @@ _replacement_fields = [
     {"name": "rp_location", "label": "Position Location", "type": "text",
      "required": True, "section": "Position Details",
      "help": "Where the role will be based."},
-    {"name": "rp_hours_per_week",
+    {"name": "rp_contract_basis", "label": "Contract Basis", "type": "select",
+     "options": CONTRACT_BASES, "required": True, "section": "Position Details"},
+    # Shown only for Part-time; Full-time implies 35 hours (from the option label).
+    {"name": "rp_part_time_hours",
      "label": "Please enter number of hours to be worked per week",
-     "type": "number", "required": True, "section": "Position Details"},
-    # Working pattern (rp_hours_<day>) is rendered as a grid in the template
-    # and is optional ("if known").
+     "type": "number", "section": "Position Details",
+     "show_when": ("rp_contract_basis", "Part-time")},
+    # Working pattern (rp_hours_<day>) is rendered as a grid in the template.
     {"name": "rp_classification", "label": "Position Classification",
      "type": "select", "options": POSITION_CLASSIFICATIONS, "required": True,
      "section": "Position Details",

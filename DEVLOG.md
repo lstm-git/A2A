@@ -180,6 +180,25 @@
   `index.html` linking to `A2A/`.
 - **Deploy:** see DEPLOY.md "Reverse proxy / hub" section.
 
+## 2026-06-17 — Hours field unified + working-pattern check on both screens
+- **Goal:** make "hours to be worked" identical on New Position and Replacement,
+  and enforce the working-pattern sum check on both (previously only Replacement).
+- **Hours field (both screens):** a **Contract Basis** dropdown (Full-time (35h) /
+  Part-time). Selecting **Part-time** reveals a number field "number of hours to be
+  worked per week" (`*_part_time_hours`, optional, via the existing `show_when`).
+  Replacement's old free-number `rp_hours_per_week` removed; New Position keeps its
+  `np_contract_basis` and gains `np_part_time_hours`.
+- **Working pattern (both screens):** now **required** and must sum to the weekly
+  target. Target resolved client-side: Full-time → the number parsed from the option
+  label (35); Part-time → the entered part-time hours (no check until entered, since
+  that field is optional). `workpattern` macro gained `basis`/`pthours` params
+  (data-attrs); `picker.js` computes the target, shows a live total, and blocks
+  submit if the pattern is empty or doesn't match. Old single `perweek` path kept as
+  a fallback.
+- Files: `steps.py`, `templates/_form_macros.html`, `templates/step_new_position.html`,
+  `templates/step_replacement.html`, `static/picker.js`. Both templates render-verified.
+- **Decisions (you):** part-time hours optional; working pattern always required.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

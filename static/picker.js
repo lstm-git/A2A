@@ -54,49 +54,60 @@ document.querySelectorAll("[data-show-when]").forEach((wrap) => {
   sync();
 });
 
-// Working pattern: live total, and (where a weekly-hours field is named) require an
-// entered pattern to add up to that weekly total before the form can be submitted.
+// Working pattern: live total. The pattern is required and must add up to the
+// weekly target before the form can be submitted. The target is taken from a
+// contract-basis select (Full-time -> the number in its label, e.g. 35) plus an
+// optional part-time hours field; falling back to a named weekly-hours field.
 document.querySelectorAll("[data-workpattern]").forEach((wrap) => {
   const dayInputs = wrap.querySelectorAll('input[type="number"]');
-  const perWeekName = wrap.dataset.perweek;
-  const perWeek = perWeekName
-    ? document.querySelector('[name="' + perWeekName + '"]')
-    : null;
   const note = wrap.querySelector(".wp-total");
+  const byName = (n) => (n ? document.querySelector('[name="' + n + '"]') : null);
+  const perWeek = byName(wrap.dataset.perweek);
+  const basis = byName(wrap.dataset.basis);
+  const ptHours = byName(wrap.dataset.pthours);
+
+  // Effective weekly hours to check against, or null if not yet known.
+  function targetHours() {
+    if (basis) {
+      if (/part-time/i.test(basis.value)) {
+        return ptHours && ptHours.value !== "" ? parseFloat(ptHours.value) : null;
+      }
+      const m = basis.value.match(/[\d.]+/); // Full-time: number in the label (35)
+      return m ? parseFloat(m[0]) : null;
+    }
+    if (perWeek) return perWeek.value !== "" ? parseFloat(perWeek.value) : null;
+    return null;
+  }
 
   function update() {
     let total = 0;
-    let anyFilled = false;
-    dayInputs.forEach((i) => {
-      if (i.value !== "") anyFilled = true;
-      total += parseFloat(i.value) || 0;
-    });
+    dayInputs.forEach((i) => (total += parseFloat(i.value) || 0));
     const rounded = Math.round(total * 100) / 100;
+    const target = targetHours();
     let msg = "Total: " + rounded + " hrs";
     let bad = false;
-    if (perWeek && perWeek.value !== "" && anyFilled) {
-      const target = parseFloat(perWeek.value) || 0;
-      if (rounded !== target) {
-        msg += " — must equal the weekly hours (" + target + ")";
-        bad = true;
-      } else {
-        msg += " — matches weekly hours";
-      }
+    let validity = "";
+    if (rounded === 0) {
+      bad = true;
+      validity = "Please enter the working pattern.";
+    } else if (target != null && rounded !== target) {
+      msg += " — must equal the weekly hours (" + target + ")";
+      bad = true;
+      validity = "Working pattern must add up to the weekly hours.";
+    } else if (target != null) {
+      msg += " — matches weekly hours";
     }
     if (note) {
       note.textContent = msg;
       note.classList.toggle("mismatch", bad);
     }
-    // Block submit while the entered pattern doesn't match the weekly total.
-    dayInputs.forEach((i) =>
-      i.setCustomValidity(
-        bad ? "Working pattern must add up to the weekly hours." : ""
-      )
-    );
+    dayInputs.forEach((i) => i.setCustomValidity(validity));
   }
 
   dayInputs.forEach((i) => i.addEventListener("input", update));
   if (perWeek) perWeek.addEventListener("input", update);
+  if (basis) basis.addEventListener("change", update);
+  if (ptHours) ptHours.addEventListener("input", update);
   update();
 });
 

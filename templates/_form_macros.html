@@ -77,13 +77,16 @@
 {% endmacro %}
 
 {# Mon-Sun hours grid. Field names are `<prefix>mon` ... `<prefix>sun`.
-   Each day is capped at 12 hours. If `perweek` (a field name) is given, JS checks
-   the entered pattern sums to that weekly total. #}
-{% macro workpattern(answers, prefix, perweek='') %}
+   Each day is capped at 12 hours. JS requires the entered pattern to sum to the
+   weekly target, taken (in order) from: a contract-basis select `basis`
+   (Full-time -> the number in its label, e.g. 35) plus an optional part-time
+   hours field `pthours`; or a named weekly-hours field `perweek`. #}
+{% macro workpattern(answers, prefix, perweek='', basis='', pthours='') %}
   {% set days = [('mon','Monday'), ('tue','Tuesday'), ('wed','Wednesday'),
                  ('thu','Thursday'), ('fri','Friday'), ('sat','Saturday'),
                  ('sun','Sunday')] %}
-  <div data-workpattern data-prefix="{{ prefix }}" data-perweek="{{ perweek }}">
+  <div data-workpattern data-prefix="{{ prefix }}" data-perweek="{{ perweek }}"
+       data-basis="{{ basis }}" data-pthours="{{ pthours }}">
     <table class="workpattern">
       <thead>
         <tr><th>#</th>{% for key, label in days %}<th>{{ label }}</th>{% endfor %}</tr>
