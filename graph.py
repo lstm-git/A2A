@@ -28,11 +28,15 @@ TIMEOUT = 10
 # workflow uses (ontrack-api/blueprints/entra.py /cost-centres).
 COST_CENTRE_SITE = "lstmed.sharepoint.com:/sites/OnTrack:"
 COST_CENTRE_LIST_ID = "F0B05C0A-4E80-41EE-B143-AAA154B92313"
+# Display name of the column that supplies Cost Centre Type. Its SharePoint
+# internal name is resolved at runtime (renames/odd encodings shouldn't break us).
+COST_CENTRE_TYPE_COLUMN = "Project Type Title"
 COST_CENTRE_TTL = 300  # seconds to cache the raw list
 
 _lock = threading.Lock()
 _token = {"value": None, "expires": 0.0}
 _cost_centre_cache = {"items": None, "expires": 0.0}
+_cc_type_field_cache = {"name": None, "expires": 0.0}
 
 
 def is_configured() -> bool:
@@ -120,16 +124,49 @@ def user_exists(email: str) -> bool:
     return resp.status_code == 200
 
 
+def _cost_centre_type_field() -> str:
+    """Internal SharePoint field name for the Cost Centre Type column, cached.
+
+    Resolved from the column's display name; falls back to the conventional
+    encoding if the lookup fails or Graph is unconfigured."""
+    now = time.time()
+    with _lock:
+        if _cc_type_field_cache["name"] and now < _cc_type_field_cache["expires"]:
+            return _cc_type_field_cache["name"]
+
+    name = "Project_x0020_Type_x0020_Title"  # conventional fallback
+    try:
+        url = (f"{GRAPH}/sites/{COST_CENTRE_SITE}/lists/{COST_CENTRE_LIST_ID}"
+               "/columns?$select=name,displayName")
+        resp = requests.get(
+            url, headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
+        if resp.ok:
+            target = COST_CENTRE_TYPE_COLUMN.strip().lower()
+            for col in resp.json().get("value", []):
+                if (col.get("displayName") or "").strip().lower() == target:
+                    name = col.get("name") or name
+                    break
+    except Exception:
+        pass  # keep the fallback
+
+    with _lock:
+        _cc_type_field_cache["name"] = name
+        _cc_type_field_cache["expires"] = time.time() + COST_CENTRE_TTL
+    return name
+
+
 def _cost_centre_items() -> list[dict]:
-    """Raw cost-centre rows [{title, authorised}] from SharePoint, cached briefly."""
+    """Raw cost-centre rows [{title, authorised, type}] from SharePoint, cached."""
     now = time.time()
     with _lock:
         if _cost_centre_cache["items"] is not None and now < _cost_centre_cache["expires"]:
             return _cost_centre_cache["items"]
 
+    type_field = _cost_centre_type_field()
     url = (
         f"{GRAPH}/sites/{COST_CENTRE_SITE}/lists/{COST_CENTRE_LIST_ID}/items"
-        "?$expand=fields($select=Title,Authorised_x0020_Email_x0020_Add)&$top=500"
+        "?$expand=fields($select=Title,Authorised_x0020_Email_x0020_Add,"
+        f"{type_field})&$top=500"
     )
     resp = requests.get(
         url, headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
@@ -140,6 +177,7 @@ def _cost_centre_items() -> list[dict]:
         items.append({
             "title": (f.get("Title") or "").strip(),
             "authorised": (f.get("Authorised_x0020_Email_x0020_Add") or "").lower(),
+            "type": (f.get(type_field) or "").strip(),
         })
 
     with _lock:
@@ -148,13 +186,25 @@ def _cost_centre_items() -> list[dict]:
     return items
 
 
+def _authorised_items(email: str) -> list[dict]:
+    email = (email or "").strip().lower()
+    if not is_configured() or not email:
+        return []
+    return [it for it in _cost_centre_items()
+            if it["title"] and email in it["authorised"]]
+
+
 def cost_centres(email: str) -> list[str]:
     """Cost centres whose 'Authorised Email Add' contains `email` (sorted, unique).
 
     Mirrors the Catering filter. Returns [] when Graph is unconfigured or no
     email is given (so the dropdown degrades gracefully in development)."""
-    email = (email or "").strip().lower()
-    if not is_configured() or not email:
-        return []
-    return sorted({it["title"] for it in _cost_centre_items()
-                   if it["title"] and email in it["authorised"]})
+    return sorted({it["title"] for it in _authorised_items(email)})
+
+
+def cost_centre_type_map(email: str) -> dict:
+    """{cost_centre_title: project_type} for cost centres authorised to `email`.
+
+    Drives the read-only Cost Centre Type, auto-filled from the chosen Cost
+    Centre's record. Returns {} when Graph is unconfigured."""
+    return {it["title"]: it["type"] for it in _authorised_items(email) if it["title"]}

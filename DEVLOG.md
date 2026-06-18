@@ -358,6 +358,26 @@
   get_step/stage_steps still resolve them; submit persists `A2A-0001`,
   round-trips the answer JSON, redirects to a 200 confirmation, clears session.
 
+## 2026-06-18 — Summary centring + Cost Centre Type auto-fill
+- **Summary page centred:** it used `.panel` (max-width but no auto margins, so it
+  sat left); switched to the standard `.page` + `.card` wrapper like the other
+  screens.
+- **Cost Centre Type now auto-fills from the chosen Cost Centre** (you: same
+  record, not an independent dropdown). Sourced from the cost-centre list's
+  **"Project Type Title"** column.
+  - `graph.py`: `_cost_centre_type_field()` resolves that column's internal
+    SharePoint name from its display name (cached; falls back to
+    `Project_x0020_Type_x0020_Title`); `_cost_centre_items()` now also selects it;
+    new `cost_centre_type_map(email)` -> `{cost_centre: project_type}`.
+  - `app.py`: passes `cost_centre_types` to the funding template and, on submit,
+    sets `funding_cc_type_<n>` from the map (**server-authoritative**, like
+    Departmental Group — ignores any tampered hidden value).
+  - `step_funding.html`: Cost Centre Type is now a **read-only** display + hidden
+    input, auto-filled live by a small inline script from the injected map.
+- **Verified** (test client, patched Graph): field is read-only (no free-text box);
+  map injected; picking a cost centre fills the type; a tampered POST value is
+  overwritten from the record.
+
 ### Still to decide / build
 - Phase 2 (PDF), Phase 3 (approval workflow + email), Phase 4 (dashboards).
 - "Completed A2As" — the dashboard/list view (Phase 4).

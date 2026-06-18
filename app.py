@@ -81,6 +81,20 @@ def step(step_id):
                     step_engine.code_for_classification(
                         answers.get(f["name"], "")))
 
+        # Cost Centre Type is derived (server-authoritative) from the chosen Cost
+        # Centre's SharePoint record. Falls back to the posted value if the lookup
+        # is unavailable (e.g. Graph unconfigured in development).
+        if step_id.startswith("funding_"):
+            n = step_id.split("_")[1]
+            cc = answers.get(f"funding_cost_centre_{n}", "")
+            try:
+                type_map = graph.cost_centre_type_map(answers.get("line_manager", ""))
+            except Exception as exc:
+                app.logger.warning("Cost-centre type lookup failed: %s", exc)
+                type_map = {}
+            if cc in type_map:
+                answers[f"funding_cc_type_{n}"] = type_map[cc]
+
         session.modified = True
 
         errors = validate_step(current, answers)
@@ -97,10 +111,15 @@ def step(step_id):
 
     # Cost Centre dropdown options (funding steps): the OnTrack SharePoint list,
     # filtered to those authorised to the Line Manager chosen on the Purpose page.
+    # cost_centre_types maps each cost centre to its Project Type Title, so the
+    # read-only Cost Centre Type can auto-fill from the chosen Cost Centre.
     cost_centres = []
+    cost_centre_types = {}
     if step_id.startswith("funding_"):
+        lm = answers.get("line_manager", "")
         try:
-            cost_centres = graph.cost_centres(answers.get("line_manager", ""))
+            cost_centres = graph.cost_centres(lm)
+            cost_centre_types = graph.cost_centre_type_map(lm)
         except Exception as exc:
             app.logger.warning("Cost-centre lookup failed: %s", exc)
 
@@ -111,6 +130,7 @@ def step(step_id):
     return render_template(template, step=current, answers=answers,
                            active=active, prev_id=prev_id, errors=errors,
                            cost_centres=cost_centres,
+                           cost_centre_types=cost_centre_types,
                            dept_groups=step_engine.DEPARTMENT_TO_GROUP)
 
 

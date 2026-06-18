@@ -1,24 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="panel">
-  <h2>Summary</h2>
-  <p class="intro">Review of the answers captured for this A2A.</p>
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">Summary</h2>
+    <p class="intro">Review of the answers captured for this A2A.</p>
 
-  {% for s in active %}
-    <h3>{{ s.title }}</h3>
-    <dl>
-      {% for f in s.fields %}
-        <dt>{{ f.label }}</dt>
-        <dd>{{ answers.get(f.name, '') or '—' }}</dd>
-      {% endfor %}
-    </dl>
-  {% endfor %}
+    {% for s in active %}
+      <h3>{{ s.title }}</h3>
+      <dl>
+        {% for f in s.fields %}
+          <dt>{{ f.label }}</dt>
+          <dd>{{ answers.get(f.name, '') or '—' }}</dd>
+        {% endfor %}
+      </dl>
+    {% endfor %}
 
-  <div class="actions">
-    <form method="post" action="{{ url_for('submit') }}">
-      <button class="btn" type="submit">Submit for approval</button>
-    </form>
-    <a class="btn secondary" href="{{ url_for('index') }}">Start new A2A</a>
-  </div>
-</section>
+    <div class="actions">
+      <form method="post" action="{{ url_for('submit') }}">
+        <button class="btn" type="submit">Submit for approval</button>
+      </form>
+      <a class="btn secondary" href="{{ url_for('index') }}">Start new A2A</a>
+    </div>
+  </section>
+</div>
 {% endblock %}

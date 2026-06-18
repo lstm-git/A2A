@@ -14,7 +14,20 @@
 
       {{ F.cost_centre_row(step.fields | selectattr('name', 'equalto', 'funding_cost_centre_' ~ n) | first, answers, cost_centres) }}
       {{ F.row(step.fields, 'funding_account_title_' ~ n, answers) }}
-      {{ F.row(step.fields, 'funding_cc_type_' ~ n, answers) }}
+
+      {# Cost Centre Type — read-only, auto-filled from the chosen Cost Centre's
+         SharePoint record (Project Type Title). Server is authoritative on submit. #}
+      {% set cc_type_name = 'funding_cc_type_' ~ n %}
+      <div class="form-row">
+        <label>Cost Centre Type <span class="req">*</span></label>
+        <div class="control">
+          <div class="readonly-field" id="{{ cc_type_name }}_display">{{ answers.get(cc_type_name) or '—' }}</div>
+          <input type="hidden" name="{{ cc_type_name }}" id="{{ cc_type_name }}_input"
+                 value="{{ answers.get(cc_type_name, '') }}">
+          <p class="field-hint">Set automatically from the selected Cost Centre.</p>
+        </div>
+      </div>
+
       {{ F.row(step.fields, 'funding_pct_' ~ n, answers) }}
       {{ F.row(step.fields, 'funding_start_' ~ n, answers) }}
       {{ F.row(step.fields, 'funding_end_' ~ n, answers) }}
@@ -37,4 +50,24 @@
     </form>
   </section>
 </div>
+
+<script>
+  // Cost Centre Type is derived from the chosen Cost Centre's record (the map is
+  // {cost centre: Project Type Title}, authorised to the Line Manager). Server is
+  // authoritative on submit; this only drives the live read-only display.
+  const CC_TYPES = {{ cost_centre_types | tojson }};
+  const ccSel = document.querySelector('select[name="funding_cost_centre_{{ n }}"]');
+  const ccTypeDisplay = document.getElementById('funding_cc_type_{{ n }}_display');
+  const ccTypeInput = document.getElementById('funding_cc_type_{{ n }}_input');
+  function syncCcType() {
+    // Prefer the live map; otherwise keep any previously-saved value.
+    const t = (ccSel.value in CC_TYPES) ? CC_TYPES[ccSel.value] : (ccTypeInput.value || '');
+    ccTypeDisplay.textContent = t || '—';
+    ccTypeInput.value = t;
+  }
+  if (ccSel) {
+    ccSel.addEventListener('change', syncCcType);
+    syncCcType();
+  }
+</script>
 {% endblock %}
