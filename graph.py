@@ -24,8 +24,15 @@ GRAPH = "https://graph.microsoft.com/v1.0"
 DOMAIN = "@lstmed.ac.uk"
 TIMEOUT = 10
 
+# OnTrack SharePoint Cost Centre list — the same list/fields the Catering
+# workflow uses (ontrack-api/blueprints/entra.py /cost-centres).
+COST_CENTRE_SITE = "lstmed.sharepoint.com:/sites/OnTrack:"
+COST_CENTRE_LIST_ID = "F0B05C0A-4E80-41EE-B143-AAA154B92313"
+COST_CENTRE_TTL = 300  # seconds to cache the raw list
+
 _lock = threading.Lock()
 _token = {"value": None, "expires": 0.0}
+_cost_centre_cache = {"items": None, "expires": 0.0}
 
 
 def is_configured() -> bool:
@@ -111,3 +118,43 @@ def user_exists(email: str) -> bool:
         f"{GRAPH}/users/{email}",
         headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
     return resp.status_code == 200
+
+
+def _cost_centre_items() -> list[dict]:
+    """Raw cost-centre rows [{title, authorised}] from SharePoint, cached briefly."""
+    now = time.time()
+    with _lock:
+        if _cost_centre_cache["items"] is not None and now < _cost_centre_cache["expires"]:
+            return _cost_centre_cache["items"]
+
+    url = (
+        f"{GRAPH}/sites/{COST_CENTRE_SITE}/lists/{COST_CENTRE_LIST_ID}/items"
+        "?$expand=fields($select=Title,Authorised_x0020_Email_x0020_Add)&$top=500"
+    )
+    resp = requests.get(
+        url, headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
+    resp.raise_for_status()
+    items = []
+    for item in resp.json().get("value", []):
+        f = item.get("fields", {})
+        items.append({
+            "title": (f.get("Title") or "").strip(),
+            "authorised": (f.get("Authorised_x0020_Email_x0020_Add") or "").lower(),
+        })
+
+    with _lock:
+        _cost_centre_cache["items"] = items
+        _cost_centre_cache["expires"] = time.time() + COST_CENTRE_TTL
+    return items
+
+
+def cost_centres(email: str) -> list[str]:
+    """Cost centres whose 'Authorised Email Add' contains `email` (sorted, unique).
+
+    Mirrors the Catering filter. Returns [] when Graph is unconfigured or no
+    email is given (so the dropdown degrades gracefully in development)."""
+    email = (email or "").strip().lower()
+    if not is_configured() or not email:
+        return []
+    return sorted({it["title"] for it in _cost_centre_items()
+                   if it["title"] and email in it["authorised"]})

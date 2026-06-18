@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% import "_form_macros.html" as F %}
+
+{# Shared template for Source of Funding 1-5. The field-name suffix is the index
+   taken from the step id (funding_3 -> 3), so one template serves all five. #}
+{% set n = step.id.split('_')[1] | int %}
+
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">{{ step.title }}</h2>
+
+    <form method="post" class="a2a-form">
+
+      {{ F.cost_centre_row(step.fields | selectattr('name', 'equalto', 'funding_cost_centre_' ~ n) | first, answers, cost_centres) }}
+      {{ F.row(step.fields, 'funding_account_title_' ~ n, answers) }}
+      {{ F.row(step.fields, 'funding_cc_type_' ~ n, answers) }}
+      {{ F.row(step.fields, 'funding_pct_' ~ n, answers) }}
+      {{ F.row(step.fields, 'funding_start_' ~ n, answers) }}
+      {{ F.row(step.fields, 'funding_end_' ~ n, answers) }}
+
+      {# Add-another question: shown only while this source's % of total funding
+         is below 100 (numeric conditional). Absent on the last source (n == 5). #}
+      {% if n < 5 %}
+        {{ F.numeric_conditional_row(step.fields, 'add_funding_' ~ (n + 1), answers) }}
+      {% endif %}
+
+      {{ F.attachments_placeholder() }}
+
+      <div class="actions">
+        {% if prev_id %}
+          <a class="btn secondary" href="{{ url_for('step', step_id=prev_id) }}">Back</a>
+        {% endif %}
+        <button class="btn" type="submit">Next</button>
+      </div>
+
+    </form>
+  </section>
+</div>
+{% endblock %}

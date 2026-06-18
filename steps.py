@@ -15,6 +15,8 @@ class Step:
     fields: list = field(default_factory=list)
     condition: Callable = lambda answers: True
     intro: str = ""
+    # Explicit template name (else app.py falls back to step_<id>.html / step.html).
+    template: str = ""
 
 
 PURPOSE_CHOICES = ["New Position", "Replacement", "Extension", "Consultancy"]
@@ -82,11 +84,12 @@ def approval_fields(prefix: str) -> list:
 
 def funding_active(n: int) -> Callable:
     """Source of Funding 1 always shows; 2-5 appear only if the previous step
-    ticked 'add another source of funding'. Finance Approval n reuses this."""
+    answered 'Yes' to 'add an additional funding source'. Finance Approval n
+    reuses this."""
     def cond(answers):
         if n == 1:
             return True
-        return answers.get(f"add_funding_{n}") == "on"
+        return answers.get(f"add_funding_{n}") == "Yes"
     return cond
 
 
@@ -521,18 +524,41 @@ STEPS.append(Step("consultancy", "Consultancy",
                   condition=lambda a: a.get("purpose") == "Consultancy",
                   fields=_consultancy_fields))
 
-# 3. Sources of Funding 1-5 (each can spawn the next)
+# 3. Sources of Funding 1-5 (each can spawn the next).
+#    Cost Centre is backed by the OnTrack SharePoint Cost Centre list (the same
+#    list the Catering workflow uses), filtered to those authorised to the Line
+#    Manager; options are fetched in app.py and rendered server-side. The
+#    "add an additional funding source?" question appears only while the running
+#    % of total funding is below 100 (numeric `show_when_lt`).
 for n in range(1, 6):
     f = [
-        {"name": f"funding_source_{n}", "label": f"Funding source {n} name", "type": "text"},
-        {"name": f"funding_code_{n}", "label": "Cost centre / code", "type": "text"},
-        {"name": f"funding_pct_{n}", "label": "% of total funding", "type": "number"},
+        {"name": f"funding_cost_centre_{n}", "label": "Cost Centre",
+         "type": "select", "options": [], "required": True,
+         "widget": "cost_centre",
+         "help": "Select the cost centre to be charged. Sourced from the OnTrack "
+                 "Cost Centre list (those authorised to the Line Manager)."},
+        {"name": f"funding_account_title_{n}", "label": "Account Title",
+         "type": "text", "required": True},
+        {"name": f"funding_cc_type_{n}", "label": "Cost Centre Type",
+         "type": "text", "required": True},
+        {"name": f"funding_pct_{n}", "label": "% of total funding",
+         "type": "number", "required": True},
+        {"name": f"funding_start_{n}", "label": "Funding start-date",
+         "type": "date", "required": True},
+        {"name": f"funding_end_{n}", "label": "Funding end-date",
+         "type": "date", "required": True},
     ]
     if n < 5:
+        # Yes/No, defaults No (so it's satisfied while hidden — avoids the
+        # hidden-required pitfall). Shown only when this source's % < 100.
         f.append({"name": f"add_funding_{n + 1}",
-                  "label": "Add another source of funding?", "type": "checkbox"})
+                  "label": "Do you need to add an additional funding source?",
+                  "type": "radio", "options": YES_NO, "default": "No",
+                  "required": True,
+                  "show_when_lt": (f"funding_pct_{n}", 100)})
     STEPS.append(Step(f"funding_{n}", f"Source of Funding {n}",
-                      fields=f, condition=funding_active(n)))
+                      fields=f, condition=funding_active(n),
+                      template="step_funding.html"))
 
 # 4. Approval chain
 STEPS.append(Step("line_approval", "Line Approval Manager",

@@ -285,6 +285,39 @@
 - Files: `steps.py`, `templates/_form_macros.html`, `static/picker.js`,
   `templates/step_consultancy.html`. All branches render-verified.
 
+## 2026-06-18 — Source of Funding screens rebuilt + SharePoint Cost Centre
+- Rebuilt Source of Funding 1-5 to the supplied screenshot (replaced the old 3
+  fields). New field set per source: **Cost Centre** (select), Account Title,
+  Cost Centre Type, % of total funding, Funding start-date, Funding end-date,
+  then **"Do you need to add an additional funding source?"** (Yes/No) and the
+  attachments placeholder. Field names `funding_<thing>_<n>`.
+- **Cost Centre wired to SharePoint** (you: wire now): `graph.cost_centres(email)`
+  reuses the OnTrack Cost Centre list — same site/list-id/fields as the Catering
+  workflow (ontrack-api `/entra/cost-centres`); raw list cached 5 min. **Filtered
+  by the Line Manager email** (you: A2A has no requester auth yet, so the LM
+  chosen on the Purpose page is used as the authorised email). Options rendered
+  server-side; `app.py` fetches them for `funding_*` steps and passes
+  `cost_centres` to the template. Degrades to "no cost centres available" when
+  Graph is unconfigured (dev) or none are authorised.
+- **Add-another only when % < 100:** new numeric conditional `show_when_lt:
+  (field, threshold)` — macro `numeric_conditional_row` + a `[data-show-when-lt]`
+  handler in picker.js (mirrors the equality handler's reset-on-hide). The
+  Yes/No radio **defaults No** and is required, so it's satisfied while hidden
+  (avoids the hidden-required pitfall) and means "don't add another".
+- The add-another control changed from a **checkbox** to **Yes/No radio**;
+  `funding_active()` now spawns the next source on `== "Yes"` (was `== "on"`).
+  Finance Approval N reuses `funding_active`, so it follows automatically.
+- **Engine:** `Step` gained an optional `template` field; `app.py` template
+  precedence is now `step.template` -> `step_<id>.html` -> `step.html`. One shared
+  `templates/step_funding.html` serves all five (suffix from the step id).
+- New macro `cost_centre_row`. Files: `steps.py`, `graph.py`, `app.py`,
+  `_form_macros.html`, `templates/step_funding.html`, `static/picker.js`.
+- **Verified** via Flask test client: all five render 200; funding_5 has no
+  add-another; %50+Yes spawns funding_2 and POST redirects there; %100/No/default
+  do not.
+- **TODO:** swap the LM-email cost-centre filter for the logged-in requester once
+  A2A has auth/SSO.
+
 ### Still to decide / build
 - "Completed A2As" — treated as a list view to build later, not a wizard step.
 - Per-step vs combined pages (currently one page per step).

@@ -92,12 +92,22 @@ def step(step_id):
     idx = step_engine.index_of(active, step_id)
     prev_id = active[idx - 1].id if idx not in (None, 0) else None
 
-    # Use a per-step template (step_<id>.html) if one exists, else the generic one.
-    custom = f"step_{step_id}.html"
+    # Cost Centre dropdown options (funding steps): the OnTrack SharePoint list,
+    # filtered to those authorised to the Line Manager chosen on the Purpose page.
+    cost_centres = []
+    if step_id.startswith("funding_"):
+        try:
+            cost_centres = graph.cost_centres(answers.get("line_manager", ""))
+        except Exception as exc:
+            app.logger.warning("Cost-centre lookup failed: %s", exc)
+
+    # Template precedence: explicit step.template, else step_<id>.html, else generic.
+    custom = current.template or f"step_{step_id}.html"
     template = custom if os.path.exists(
         os.path.join(app.template_folder, custom)) else "step.html"
     return render_template(template, step=current, answers=answers,
                            active=active, prev_id=prev_id, errors=errors,
+                           cost_centres=cost_centres,
                            dept_groups=step_engine.DEPARTMENT_TO_GROUP)
 
 

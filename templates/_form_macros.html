@@ -84,6 +84,49 @@
   </div>
 {% endmacro %}
 
+{# Numeric conditional row: shown only while the trigger number field is
+   non-empty AND less than the field's `show_when_lt` threshold (toggled live by
+   picker.js, which also clears the row when it hides). #}
+{% macro numeric_conditional_row(fields, name, answers) %}
+  {% set f = fields | selectattr('name', 'equalto', name) | first %}
+  {% set trigger = f.show_when_lt[0] %}
+  {% set threshold = f.show_when_lt[1] %}
+  {% set tv = answers.get(trigger) %}
+  {% set show = tv not in (None, '') and (tv | float(threshold)) < threshold %}
+  <div data-show-when-lt="{{ trigger }}" data-show-lt="{{ threshold }}"
+       {{ '' if show else 'hidden' }}>
+    {{ row(fields, name, answers) }}
+  </div>
+{% endmacro %}
+
+{# Cost Centre select row. Options are supplied by the server (the OnTrack
+   SharePoint list, filtered to the Line Manager) rather than from f.options. #}
+{% macro cost_centre_row(f, answers, options) %}
+  <div class="form-row">
+    <label>{{ f.label }}{% if f.required %} <span class="req">*</span>{% endif %}
+      {% if f.help %}<span class="help" tabindex="0" data-tip="{{ f.help }}">i</span>{% endif %}
+    </label>
+    <div class="control">
+      <select name="{{ f.name }}" {{ 'required' if f.required }}>
+        <option value="" {{ 'selected' if not answers.get(f.name) }}>
+          {{ '— Select cost centre —' if options else '— No cost centres available —' }}
+        </option>
+        {% for opt in options %}
+          <option value="{{ opt }}" {{ 'selected' if answers.get(f.name) == opt }}>{{ opt }}</option>
+        {% endfor %}
+        {# Keep a previously-saved value selectable even if it's not in the live list. #}
+        {% if answers.get(f.name) and answers.get(f.name) not in options %}
+          <option value="{{ answers.get(f.name) }}" selected>{{ answers.get(f.name) }}</option>
+        {% endif %}
+      </select>
+      {% if not options %}
+        <p class="field-hint">No authorised cost centres found for the Line Manager
+          (or the directory is not configured).</p>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
 {# Read-only display row (used for fields carried over from an earlier page). #}
 {% macro readonly_row(label, value, required=True) %}
   <div class="form-row">
