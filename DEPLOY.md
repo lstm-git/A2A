@@ -69,3 +69,9 @@ Then browse `https://trackon.lstmed.ac.uk/A2A/`.
 - `app.py` reads `HOST`/`PORT` from the environment (set in `a2a.service`);
   `.env` (the `ENTRA_*` secrets) is loaded by `load_dotenv()`.
 - Logs: `journalctl -u a2a -f`.
+- **Database (SQLite):** submitted A2As are stored in `a2a.db`. Path defaults to
+  the app dir; override with the `A2A_DB` env var (recommend
+  `/opt/trackon/A2A/a2a.db`). Created automatically on first run (`init_db()`);
+  gitignored. Ensure `www-data` can write it: `chown www-data:www-data a2a.db`
+  (or just the app dir before first start). All DB access is isolated in
+  `dbstore.py` so a move to a server DB later changes only that file.

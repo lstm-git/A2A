@@ -13,11 +13,14 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
+import dbstore
 import graph
 import steps as step_engine
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+
+dbstore.init_db()
 
 # Behind the trackon nginx reverse proxy the app is mounted under a sub-path
 # (e.g. /A2A). ProxyFix honours the X-Forwarded-Prefix header nginx sends so that
@@ -128,6 +131,26 @@ def summary():
     answers = get_answers()
     active = step_engine.active_steps(answers)
     return render_template("summary.html", active=active, answers=answers)
+
+
+@app.route("/submit", methods=["POST"])
+def submit():
+    """Persist the A2A and show the confirmation. Notifications/PDF come later."""
+    answers = get_answers()
+    if not answers.get("purpose"):
+        return redirect(url_for("index"))
+    ref = dbstore.create_request(answers)
+    session["answers"] = {}  # the request is saved; start a clean session
+    session.modified = True
+    return redirect(url_for("submitted", ref=ref))
+
+
+@app.route("/submitted/<ref>")
+def submitted(ref):
+    record = dbstore.get_request(ref)
+    if record is None:
+        return redirect(url_for("index"))
+    return render_template("submitted.html", record=record)
 
 
 if __name__ == "__main__":

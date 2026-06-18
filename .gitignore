@@ -29,3 +29,5 @@ Thumbs.db
 # Logs / databases
 *.log
 *.sqlite3
+*.db
+a2a.db

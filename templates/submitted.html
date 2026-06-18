@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+  <section class="card">
+    <div class="banner info">
+      <strong>A2A submitted.</strong> Your request has been saved.
+    </div>
+
+    <h2 style="margin-top:0">Submission confirmed</h2>
+    <dl class="summary-dl">
+      <dt>Reference</dt><dd><strong>{{ record.ref }}</strong></dd>
+      <dt>Purpose</dt><dd>{{ record.purpose or '—' }}</dd>
+      <dt>Status</dt><dd>{{ record.status }}</dd>
+      <dt>Submitted</dt><dd>{{ record.created_at }}</dd>
+    </dl>
+
+    <p class="field-hint">
+      Approval routing, notifications and the generated document will follow in the
+      next phases of this workflow.
+    </p>
+
+    <div class="actions">
+      <a class="btn" href="{{ url_for('index') }}">Start new A2A</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

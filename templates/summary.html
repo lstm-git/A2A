@@ -15,7 +15,10 @@
   {% endfor %}
 
   <div class="actions">
-    <a class="btn" href="{{ url_for('index') }}">Start new A2A</a>
+    <form method="post" action="{{ url_for('submit') }}">
+      <button class="btn" type="submit">Submit for approval</button>
+    </form>
+    <a class="btn secondary" href="{{ url_for('index') }}">Start new A2A</a>
   </div>
 </section>
 {% endblock %}

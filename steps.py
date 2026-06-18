@@ -17,6 +17,9 @@ class Step:
     intro: str = ""
     # Explicit template name (else app.py falls back to step_<id>.html / step.html).
     template: str = ""
+    # Approval/workflow stages (stage=True) are NOT part of the requester wizard;
+    # active_steps() excludes them. They become the approval chain in Phase 3.
+    stage: bool = False
 
 
 PURPOSE_CHOICES = ["New Position", "Replacement", "Extension", "Consultancy"]
@@ -560,25 +563,27 @@ for n in range(1, 6):
                       fields=f, condition=funding_active(n),
                       template="step_funding.html"))
 
-# 4. Approval chain
+# 4. Approval chain — these are workflow STAGES, not requester wizard pages
+#    (stage=True), so active_steps() excludes them. They are routed to the
+#    relevant approvers in Phase 3; the field sets are kept for that.
 STEPS.append(Step("line_approval", "Line Approval Manager",
-                  fields=approval_fields("line")))
+                  fields=approval_fields("line"), stage=True))
 STEPS.append(Step("director_approval", "Director/Head of Department Approval",
-                  fields=approval_fields("director")))
+                  fields=approval_fields("director"), stage=True))
 
 # Finance Approval 1-5 — one per active funding source
 for n in range(1, 6):
     STEPS.append(Step(f"finance_approval_{n}", f"Finance Approval {n}",
                       fields=approval_fields(f"finance_{n}"),
-                      condition=funding_active(n)))
+                      condition=funding_active(n), stage=True))
 
 STEPS.append(Step("head_mgmt_accounting", "Head of Management Accounting Approval",
-                  fields=approval_fields("head_mgmt")))
+                  fields=approval_fields("head_mgmt"), stage=True))
 STEPS.append(Step("head_rms", "Head of RMS Approval",
-                  fields=approval_fields("head_rms")))
+                  fields=approval_fields("head_rms"), stage=True))
 STEPS.append(Step("hr_signoff", "HR Sign-off",
-                  fields=approval_fields("hr_signoff")))
-STEPS.append(Step("hr_processing", "HR Processing",
+                  fields=approval_fields("hr_signoff"), stage=True))
+STEPS.append(Step("hr_processing", "HR Processing", stage=True,
                   fields=[
                       {"name": "hr_ref", "label": "HR reference number", "type": "text"},
                       {"name": "hr_notes", "label": "Processing notes", "type": "textarea"},
@@ -589,7 +594,13 @@ STEPS.append(Step("hr_processing", "HR Processing",
 # Engine helpers
 # ---------------------------------------------------------------------------
 def active_steps(answers: dict) -> list:
-    return [s for s in STEPS if s.condition(answers)]
+    """The requester wizard: live steps in order, excluding approval stages."""
+    return [s for s in STEPS if not s.stage and s.condition(answers)]
+
+
+def stage_steps(answers: dict) -> list:
+    """The approval chain (stage steps) live for these answers, in order."""
+    return [s for s in STEPS if s.stage and s.condition(answers)]
 
 
 def get_step(step_id: str):

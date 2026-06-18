@@ -318,7 +318,47 @@
 - **TODO:** swap the LM-email cost-centre filter for the logged-in requester once
   A2A has auth/SSO.
 
+## 2026-06-18 — Workflow direction decided (central approvals, not emailed docs)
+- **Context:** after Funding, a purpose-specific Word doc (example `A2A New
+  Position- DRAFT.docx`, content-control placeholders mapping 1:1 to A2A fields)
+  was to be generated and emailed round for sign-off.
+- **Decision (you):** don't email documents — go **central**. The A2A is the
+  record; approvers act in-app; the document becomes an on-demand export.
+  Chosen: **in-app approvals**, **email-with-link** notifications, **PDF from
+  HTML** (on demand). Approver identity for v1 reuses the **Catering token
+  pattern** (per-approver unguessable link, no SSO needed) — corrects an earlier
+  "need full Entra SSO" assumption.
+- **Build phases:** (1) persistence + submit, (2) PDF generation, (3) approval
+  workflow + email, (4) dashboards.
+- **Open (Phase 3):** approver routing — Line Manager from the form; **Director/
+  HoD captured on the form** (you: I'll place the field — NOT added yet);
+  Finance / Head of Mgmt Accounting / Head of RMS / HR are fixed role-holders
+  (list TBC). Sequential vs parallel finance approvals TBC. WeasyPrint needs
+  pango/cairo on the VM (vs wkhtmltopdf) — TBC.
+
+## 2026-06-18 — Phase 1: persistence + submit
+- **`dbstore.py` (new, SQLite):** `a2a_requests` (ref, status, purpose,
+  requester, created_at, **answers stored as JSON blob**) + empty `a2a_approvals`
+  (Phase 3). Ref format `A2A-0042` (zero-padded row id). `create_request`,
+  `get_request`, `list_requests`, `init_db` (called on app start).
+  - **Decision (you):** start on SQLite; **keep ALL DB access inside dbstore.py**
+    so moving to a server DB (Postgres/SQL Server) in prod is a one-file change.
+    DB path overridable via `A2A_DB` env.
+- **Approval steps removed from the requester wizard, non-destructively:** new
+  `Step.stage` flag; `line/director/finance_*/head_*/hr_*` marked `stage=True`;
+  `active_steps()` excludes stage steps (added `stage_steps()` for Phase 3). The
+  wizard now ends at the last Source of Funding. Steps kept, not deleted.
+- **Submit flow:** Summary page gained a **"Submit for approval"** button →
+  `POST /submit` saves the request and clears the session → redirect to new
+  **`/submitted/<ref>`** confirmation page (ref + status). New `submitted.html`.
+- **Director/HoD field NOT added yet** (you'll decide placement).
+- Files: `dbstore.py`, `steps.py`, `app.py`, `templates/summary.html`,
+  `templates/submitted.html`, `.gitignore` (a2a.db), `DEPLOY.md`.
+- **Verified** (Flask test client, temp DB): wizard excludes stage steps but
+  get_step/stage_steps still resolve them; submit persists `A2A-0001`,
+  round-trips the answer JSON, redirects to a 200 confirmation, clears session.
+
 ### Still to decide / build
-- "Completed A2As" — treated as a list view to build later, not a wizard step.
-- Per-step vs combined pages (currently one page per step).
-- Validation (required fields), persistence (DB), authentication.
+- Phase 2 (PDF), Phase 3 (approval workflow + email), Phase 4 (dashboards).
+- "Completed A2As" — the dashboard/list view (Phase 4).
+- Validation (required fields), authentication (full SSO optional, post-v1).
