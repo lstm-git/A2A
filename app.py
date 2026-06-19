@@ -81,19 +81,23 @@ def step(step_id):
                     step_engine.code_for_classification(
                         answers.get(f["name"], "")))
 
-        # Cost Centre Type is derived (server-authoritative) from the chosen Cost
-        # Centre's SharePoint record. Falls back to the posted value if the lookup
-        # is unavailable (e.g. Graph unconfigured in development).
+        # Cost Centre Type and Account Title are derived (server-authoritative)
+        # from the chosen Cost Centre's SharePoint record. Fall back to the posted
+        # value if the lookup is unavailable (e.g. Graph unconfigured in dev).
         if step_id.startswith("funding_"):
             n = step_id.split("_")[1]
             cc = answers.get(f"funding_cost_centre_{n}", "")
+            lm = answers.get("line_manager", "")
             try:
-                type_map = graph.cost_centre_type_map(answers.get("line_manager", ""))
+                type_map = graph.cost_centre_type_map(lm)
+                account_map = graph.cost_centre_account_map(lm)
             except Exception as exc:
-                app.logger.warning("Cost-centre type lookup failed: %s", exc)
-                type_map = {}
+                app.logger.warning("Cost-centre lookup failed: %s", exc)
+                type_map = account_map = {}
             if cc in type_map:
                 answers[f"funding_cc_type_{n}"] = type_map[cc]
+            if cc in account_map:
+                answers[f"funding_account_title_{n}"] = account_map[cc]
 
         session.modified = True
 
@@ -115,11 +119,13 @@ def step(step_id):
     # read-only Cost Centre Type can auto-fill from the chosen Cost Centre.
     cost_centres = []
     cost_centre_types = {}
+    cost_centre_accounts = {}
     if step_id.startswith("funding_"):
         lm = answers.get("line_manager", "")
         try:
             cost_centres = graph.cost_centres(lm)
             cost_centre_types = graph.cost_centre_type_map(lm)
+            cost_centre_accounts = graph.cost_centre_account_map(lm)
         except Exception as exc:
             app.logger.warning("Cost-centre lookup failed: %s", exc)
 
@@ -131,6 +137,7 @@ def step(step_id):
                            active=active, prev_id=prev_id, errors=errors,
                            cost_centres=cost_centres,
                            cost_centre_types=cost_centre_types,
+                           cost_centre_accounts=cost_centre_accounts,
                            dept_groups=step_engine.DEPARTMENT_TO_GROUP)
 
 

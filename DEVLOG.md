@@ -285,7 +285,7 @@
 - Files: `steps.py`, `templates/_form_macros.html`, `static/picker.js`,
   `templates/step_consultancy.html`. All branches render-verified.
 
-## 2026-06-18 — Source of Funding screens rebuilt + SharePoint Cost Centre
+## 2026-06-19 — Source of Funding screens rebuilt + SharePoint Cost Centre
 - Rebuilt Source of Funding 1-5 to the supplied screenshot (replaced the old 3
   fields). New field set per source: **Cost Centre** (select), Account Title,
   Cost Centre Type, % of total funding, Funding start-date, Funding end-date,
@@ -318,7 +318,7 @@
 - **TODO:** swap the LM-email cost-centre filter for the logged-in requester once
   A2A has auth/SSO.
 
-## 2026-06-18 — Workflow direction decided (central approvals, not emailed docs)
+## 2026-06-19 — Workflow direction decided (central approvals, not emailed docs)
 - **Context:** after Funding, a purpose-specific Word doc (example `A2A New
   Position- DRAFT.docx`, content-control placeholders mapping 1:1 to A2A fields)
   was to be generated and emailed round for sign-off.
@@ -336,7 +336,7 @@
   (list TBC). Sequential vs parallel finance approvals TBC. WeasyPrint needs
   pango/cairo on the VM (vs wkhtmltopdf) — TBC.
 
-## 2026-06-18 — Phase 1: persistence + submit
+## 2026-06-19 — Phase 1: persistence + submit
 - **`dbstore.py` (new, SQLite):** `a2a_requests` (ref, status, purpose,
   requester, created_at, **answers stored as JSON blob**) + empty `a2a_approvals`
   (Phase 3). Ref format `A2A-0042` (zero-padded row id). `create_request`,
@@ -358,7 +358,7 @@
   get_step/stage_steps still resolve them; submit persists `A2A-0001`,
   round-trips the answer JSON, redirects to a 200 confirmation, clears session.
 
-## 2026-06-18 — Summary centring + Cost Centre Type auto-fill
+## 2026-06-19 — Summary centring + Cost Centre Type auto-fill
 - **Summary page centred:** it used `.panel` (max-width but no auto margins, so it
   sat left); switched to the standard `.page` + `.card` wrapper like the other
   screens.
@@ -377,6 +377,23 @@
 - **Verified** (test client, patched Graph): field is read-only (no free-text box);
   map injected; picking a cost centre fills the type; a tampered POST value is
   overwritten from the record.
+
+## 2026-06-19 — Account Title auto-fills from Cost Centre too
+- **Account Title** now auto-fills from the chosen Cost Centre's SharePoint record
+  (column **AccountTitle**) — same read-only / server-authoritative pattern as
+  Cost Centre Type (was free text).
+- `graph.py`: generalised the single type-column resolver into `_cc_columns()`
+  (caches the list's display+internal column-name map) + `_cc_field((wanted,
+  fallback))`; column specs now `COST_CENTRE_TYPE_COLUMN` / `…_ACCOUNT_COLUMN`.
+  `_cost_centre_items()` selects both; new `cost_centre_account_map(email)`.
+- `app.py`: passes `cost_centre_accounts` to the funding template and sets
+  `funding_account_title_<n>` from the map on submit (alongside cc_type).
+- `step_funding.html`: Account Title is now read-only display + hidden input; the
+  inline script generalised to `bindDerived(map, baseName)` and fills both Account
+  Title and Cost Centre Type on Cost Centre change.
+- **Verified** (test client, patched Graph): Account Title read-only, both maps
+  injected, tampered POST values for account + type overwritten from the record;
+  all modules byte-compile.
 
 ### Still to decide / build
 - Phase 2 (PDF), Phase 3 (approval workflow + email), Phase 4 (dashboards).

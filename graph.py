@@ -28,15 +28,18 @@ TIMEOUT = 10
 # workflow uses (ontrack-api/blueprints/entra.py /cost-centres).
 COST_CENTRE_SITE = "lstmed.sharepoint.com:/sites/OnTrack:"
 COST_CENTRE_LIST_ID = "F0B05C0A-4E80-41EE-B143-AAA154B92313"
-# Display name of the column that supplies Cost Centre Type. Its SharePoint
-# internal name is resolved at runtime (renames/odd encodings shouldn't break us).
-COST_CENTRE_TYPE_COLUMN = "Project Type Title"
+# Extra cost-centre list columns read alongside Title, as (wanted, fallback):
+# `wanted` is matched against column display OR internal names at runtime (so a
+# rename / odd encoding shouldn't break us); `fallback` is used if columns can't
+# be read. Cost Centre Type <- Project Type Title; Account Title <- AccountTitle.
+COST_CENTRE_TYPE_COLUMN = ("Project Type Title", "Project_x0020_Type_x0020_Title")
+COST_CENTRE_ACCOUNT_COLUMN = ("AccountTitle", "AccountTitle")
 COST_CENTRE_TTL = 300  # seconds to cache the raw list
 
 _lock = threading.Lock()
 _token = {"value": None, "expires": 0.0}
 _cost_centre_cache = {"items": None, "expires": 0.0}
-_cc_type_field_cache = {"name": None, "expires": 0.0}
+_cc_columns_cache = {"map": None, "expires": 0.0}
 
 
 def is_configured() -> bool:
@@ -124,49 +127,55 @@ def user_exists(email: str) -> bool:
     return resp.status_code == 200
 
 
-def _cost_centre_type_field() -> str:
-    """Internal SharePoint field name for the Cost Centre Type column, cached.
-
-    Resolved from the column's display name; falls back to the conventional
-    encoding if the lookup fails or Graph is unconfigured."""
+def _cc_columns() -> dict:
+    """Cost-centre list columns as {display_or_internal_name_lower: internal}, cached."""
     now = time.time()
     with _lock:
-        if _cc_type_field_cache["name"] and now < _cc_type_field_cache["expires"]:
-            return _cc_type_field_cache["name"]
+        if _cc_columns_cache["map"] is not None and now < _cc_columns_cache["expires"]:
+            return _cc_columns_cache["map"]
 
-    name = "Project_x0020_Type_x0020_Title"  # conventional fallback
+    cmap: dict = {}
     try:
         url = (f"{GRAPH}/sites/{COST_CENTRE_SITE}/lists/{COST_CENTRE_LIST_ID}"
                "/columns?$select=name,displayName")
         resp = requests.get(
             url, headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
         if resp.ok:
-            target = COST_CENTRE_TYPE_COLUMN.strip().lower()
             for col in resp.json().get("value", []):
-                if (col.get("displayName") or "").strip().lower() == target:
-                    name = col.get("name") or name
-                    break
+                nm = col.get("name") or ""
+                dn = (col.get("displayName") or "").strip().lower()
+                if nm:
+                    cmap[nm.lower()] = nm   # internal -> internal
+                    if dn:
+                        cmap[dn] = nm       # display  -> internal
     except Exception:
-        pass  # keep the fallback
+        pass  # fall back to per-column defaults
 
     with _lock:
-        _cc_type_field_cache["name"] = name
-        _cc_type_field_cache["expires"] = time.time() + COST_CENTRE_TTL
-    return name
+        _cc_columns_cache["map"] = cmap
+        _cc_columns_cache["expires"] = time.time() + COST_CENTRE_TTL
+    return cmap
+
+
+def _cc_field(column: tuple) -> str:
+    """Resolve a (wanted, fallback) column spec to its internal field name."""
+    wanted, fallback = column
+    return _cc_columns().get(wanted.strip().lower(), fallback)
 
 
 def _cost_centre_items() -> list[dict]:
-    """Raw cost-centre rows [{title, authorised, type}] from SharePoint, cached."""
+    """Raw cost-centre rows [{title, authorised, type, account}], cached."""
     now = time.time()
     with _lock:
         if _cost_centre_cache["items"] is not None and now < _cost_centre_cache["expires"]:
             return _cost_centre_cache["items"]
 
-    type_field = _cost_centre_type_field()
+    type_field = _cc_field(COST_CENTRE_TYPE_COLUMN)
+    account_field = _cc_field(COST_CENTRE_ACCOUNT_COLUMN)
     url = (
         f"{GRAPH}/sites/{COST_CENTRE_SITE}/lists/{COST_CENTRE_LIST_ID}/items"
         "?$expand=fields($select=Title,Authorised_x0020_Email_x0020_Add,"
-        f"{type_field})&$top=500"
+        f"{type_field},{account_field})&$top=500"
     )
     resp = requests.get(
         url, headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
@@ -178,6 +187,7 @@ def _cost_centre_items() -> list[dict]:
             "title": (f.get("Title") or "").strip(),
             "authorised": (f.get("Authorised_x0020_Email_x0020_Add") or "").lower(),
             "type": (f.get(type_field) or "").strip(),
+            "account": (f.get(account_field) or "").strip(),
         })
 
     with _lock:
@@ -208,3 +218,11 @@ def cost_centre_type_map(email: str) -> dict:
     Drives the read-only Cost Centre Type, auto-filled from the chosen Cost
     Centre's record. Returns {} when Graph is unconfigured."""
     return {it["title"]: it["type"] for it in _authorised_items(email) if it["title"]}
+
+
+def cost_centre_account_map(email: str) -> dict:
+    """{cost_centre_title: account_title} for cost centres authorised to `email`.
+
+    Drives the read-only Account Title, auto-filled from the chosen Cost Centre's
+    record (the list's AccountTitle column). Returns {} when Graph is unconfigured."""
+    return {it["title"]: it["account"] for it in _authorised_items(email) if it["title"]}

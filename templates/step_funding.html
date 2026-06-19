@@ -13,7 +13,19 @@
     <form method="post" class="a2a-form">
 
       {{ F.cost_centre_row(step.fields | selectattr('name', 'equalto', 'funding_cost_centre_' ~ n) | first, answers, cost_centres) }}
-      {{ F.row(step.fields, 'funding_account_title_' ~ n, answers) }}
+
+      {# Account Title — read-only, auto-filled from the chosen Cost Centre's
+         SharePoint record (AccountTitle). Server is authoritative on submit. #}
+      {% set account_name = 'funding_account_title_' ~ n %}
+      <div class="form-row">
+        <label>Account Title <span class="req">*</span></label>
+        <div class="control">
+          <div class="readonly-field" id="{{ account_name }}_display">{{ answers.get(account_name) or '—' }}</div>
+          <input type="hidden" name="{{ account_name }}" id="{{ account_name }}_input"
+                 value="{{ answers.get(account_name, '') }}">
+          <p class="field-hint">Set automatically from the selected Cost Centre.</p>
+        </div>
+      </div>
 
       {# Cost Centre Type — read-only, auto-filled from the chosen Cost Centre's
          SharePoint record (Project Type Title). Server is authoritative on submit. #}
@@ -52,22 +64,32 @@
 </div>
 
 <script>
-  // Cost Centre Type is derived from the chosen Cost Centre's record (the map is
-  // {cost centre: Project Type Title}, authorised to the Line Manager). Server is
-  // authoritative on submit; this only drives the live read-only display.
+  // Account Title and Cost Centre Type are derived from the chosen Cost Centre's
+  // record (maps are {cost centre: value}, authorised to the Line Manager).
+  // Server is authoritative on submit; this only drives the live read-only display.
   const CC_TYPES = {{ cost_centre_types | tojson }};
+  const CC_ACCOUNTS = {{ cost_centre_accounts | tojson }};
   const ccSel = document.querySelector('select[name="funding_cost_centre_{{ n }}"]');
-  const ccTypeDisplay = document.getElementById('funding_cc_type_{{ n }}_display');
-  const ccTypeInput = document.getElementById('funding_cc_type_{{ n }}_input');
-  function syncCcType() {
-    // Prefer the live map; otherwise keep any previously-saved value.
-    const t = (ccSel.value in CC_TYPES) ? CC_TYPES[ccSel.value] : (ccTypeInput.value || '');
-    ccTypeDisplay.textContent = t || '—';
-    ccTypeInput.value = t;
+
+  // Fill a read-only display+hidden pair from a map, preserving any saved value
+  // when the live map has no entry for the current selection.
+  function bindDerived(map, baseName) {
+    const display = document.getElementById(baseName + '_display');
+    const input = document.getElementById(baseName + '_input');
+    return function () {
+      const v = (ccSel.value in map) ? map[ccSel.value] : (input.value || '');
+      display.textContent = v || '—';
+      input.value = v;
+    };
   }
+
   if (ccSel) {
-    ccSel.addEventListener('change', syncCcType);
-    syncCcType();
+    const syncs = [
+      bindDerived(CC_ACCOUNTS, 'funding_account_title_{{ n }}'),
+      bindDerived(CC_TYPES, 'funding_cc_type_{{ n }}'),
+    ];
+    ccSel.addEventListener('change', () => syncs.forEach((s) => s()));
+    syncs.forEach((s) => s());
   }
 </script>
 {% endblock %}
