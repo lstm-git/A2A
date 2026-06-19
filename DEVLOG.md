@@ -395,7 +395,63 @@
   injected, tampered POST values for account + type overwritten from the record;
   all modules byte-compile.
 
+## 2026-06-19 — Per-type field manifest from the 4 iTrent docs
+- **Context (you):** the 4 documents (iTrent New Position.docx + A2A
+  Consultancy/Extension/Replacement DRAFT.docx) are the **field SPEC** — we
+  stay central (no doc generation), but they define what each A2A *type* must
+  capture for the downstream iTrent form. They're iTrent/Ergo BPM forms with
+  opaque `Ergo_BPM_Tag_*` controls; the human-readable label sits as body text
+  next to each `[Label: Answer]` control.
+- Extracted the distinct field list per type (New Position 30, Consultancy 56,
+  Extension 51, Replacement 53) and split into 3 layers: **capture** (requester
+  wizard — the bit that differs by type), **approval** (Phase-3 stage steps),
+  **process** (HR sign-off).
+- **`steps.py`:** added the manifest (data, not behaviour) — `ITRENT_DOCS`
+  (type→doc), `TYPE_FIELDS` (per-type capture fields mapped to the wizard field
+  that supplies each, `""` = gap), shared `_FUNDING_MANIFEST`, `APPROVAL_MANIFEST`,
+  and `manifest_gaps()`. Storage unchanged (JSON blob keyed by `purpose`).
+- **Verified:** every non-empty field reference resolves to a real wizard field
+  (no typos); module imports clean.
+- **Gaps the docs reveal (capture layer) — NOT yet added:**
+  - New Position & Replacement: **Appointment term** (Permanent/Fixed-term) +
+    **reasons for fixed-term** + **fixed-term end-date** — the perm/fixed-term
+    concept is missing on both (Extension/Consultancy handle dates differently).
+  - **Director/Head of Department** required on Replacement, Extension,
+    Consultancy (the field you parked — docs confirm it's needed). Not on the
+    iTrent New Position form.
+  - Consultancy: **Assignment Location Type** (separate from Location).
+  - Verify: a stray "Number" control near VAT on Consultancy (excluded pending
+    confirmation of what it is).
+- **Approval-layer gap:** all 4 docs require an **SMG/MC sign-off** — no stage
+  step exists for it yet (chain currently line→director→finance→head_mgmt→
+  head_rms→hr_signoff→hr_processing).
+
+## 2026-06-19 — Funding: RBPS Approver + LSTM Finance Approval (finance routing seeds)
+- Two new per-funding-source fields on the Source of Funding pages, both
+  auto-filled and type `hidden` (kept off the Summary), driven by the chosen
+  Cost Centre's record — first pieces of the finance-approval routing.
+- **RBPS Approver** (`funding_rbps_approver_<n>`): sourced from the Cost Centre
+  list's **Finance Contact Name** column. `graph.py`: added
+  `COST_CENTRE_FINANCE_COLUMN` (resolved via `_cc_field`), selected in
+  `_cost_centre_items()` (`finance`), new `cost_centre_finance_map(email)`.
+  `app.py` sets it server-authoritatively on submit (like cc_type / account).
+  **Shown (read-only) only when Cost Centre Type == "Research".**
+- **LSTM Finance Approval** (`funding_lstm_finance_<n>`): placeholder value
+  **'FBP'** for now (to be refined). `app.py` sets it to 'FBP' on submit.
+  **Shown (read-only) only when a Cost Centre is selected and its Type is NOT
+  "Research"** — the inverse of RBPS, so the two are mutually exclusive.
+- `step_funding.html`: both rendered as read-only display + always-submitting
+  hidden input; visibility toggled live on cost-centre change (`toggleRbps` /
+  `toggleLstm`, keyed off the injected `cost_centre_finance` / `CC_TYPES` maps);
+  `bindDerived` made null-safe for the display element. `summary.html` now skips
+  `type == 'hidden'` fields.
+- **Verified** (test client): Research → RBPS visible / LSTM hidden; Project or
+  blank → LSTM visible ('FBP') / RBPS hidden; FBP default present; all compiles.
+- **TODO:** refine the 'FBP' placeholder; wire these into the actual finance
+  approval routing/assignment (Phase 3).
+
 ### Still to decide / build
+- Close the capture gaps above (need your go-ahead, esp. Director/HoD placement).
 - Phase 2 (PDF), Phase 3 (approval workflow + email), Phase 4 (dashboards).
 - "Completed A2As" — the dashboard/list view (Phase 4).
 - Validation (required fields), authentication (full SSO optional, post-v1).

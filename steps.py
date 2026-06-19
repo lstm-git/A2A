@@ -544,6 +544,15 @@ for n in range(1, 6):
          "type": "text", "required": True},
         {"name": f"funding_cc_type_{n}", "label": "Cost Centre Type",
          "type": "text", "required": True},
+        # Hidden: the RBPS Approver, auto-filled (server-authoritative) from the
+        # chosen Cost Centre's "Finance Contact Name" column. Drives finance routing.
+        {"name": f"funding_rbps_approver_{n}", "label": "RBPS Approver",
+         "type": "hidden"},
+        # Hidden: LSTM Finance Approval. Placeholder value 'FBP' for now (to be
+        # refined). Shown (read-only) only when the Cost Centre Type is NOT
+        # "Research" — the inverse of the RBPS Approver field.
+        {"name": f"funding_lstm_finance_{n}", "label": "LSTM Finance Approval",
+         "type": "hidden"},
         {"name": f"funding_pct_{n}", "label": "% of total funding",
          "type": "number", "required": True},
         {"name": f"funding_start_{n}", "label": "Funding start-date",
@@ -588,6 +597,162 @@ STEPS.append(Step("hr_processing", "HR Processing", stage=True,
                       {"name": "hr_ref", "label": "HR reference number", "type": "text"},
                       {"name": "hr_notes", "label": "Processing notes", "type": "textarea"},
                   ]))
+
+
+# ---------------------------------------------------------------------------
+# Per-type field manifest — the iTrent field spec
+# ---------------------------------------------------------------------------
+# The four iTrent/Ergo BPM documents are the SPEC for what each A2A type must
+# capture (we do NOT generate/email them — the A2A record is central — but the
+# downstream iTrent form needs these exact data points). This manifest records,
+# per type, each field the document requires mapped to the wizard field that
+# supplies it; field == "" marks a GAP the wizard does not yet capture. It
+# formalises how the four types differ and is the traceability for the eventual
+# iTrent hand-off. Storage is unchanged: answers are a JSON blob on
+# a2a_requests keyed by `purpose`.
+#
+# Layer:  "capture"  — entered by the requester in the wizard (differs by type);
+#         "approval" — filled by the approval chain in Phase 3 (stage steps);
+#         "process"  — HR sign-off / processing.
+
+# Which document defines each type's field set.
+ITRENT_DOCS = {
+    "New Position": "iTrent New Position.docx",
+    "Replacement":  "A2A Replacement DRAFT.docx",
+    "Extension":    "A2A Extension DRAFT.docx",
+    "Consultancy":  "A2A Consultancy DRAFT.docx",
+}
+
+
+def _cap(doc: str, field: str) -> dict:
+    """A capture-layer manifest entry (doc field -> wizard field; '' = gap)."""
+    return {"doc": doc, "field": field, "layer": "capture"}
+
+
+# Funding sources 1-5 are identical across every type (<n> = source number).
+_FUNDING_MANIFEST = [
+    _cap("Cost Centre",        "funding_cost_centre_<n>"),
+    _cap("Cost Centre Type",   "funding_cc_type_<n>"),
+    _cap("% of total funding", "funding_pct_<n>"),
+    _cap("Funding start-date", "funding_start_<n>"),
+    _cap("Funding end-date",   "funding_end_<n>"),
+]
+
+# Capture-layer field set per type (the part that distinguishes the four).
+TYPE_FIELDS = {
+    "New Position": [
+        _cap("Line Manager", "line_manager"),
+        _cap("Department", "department"),
+        _cap("Job Title", "np_job_title"),
+        _cap("Position Location", "np_location"),
+        _cap("Appointment term (Permanent / Fixed-term)", ""),       # GAP
+        _cap("Please state reasons for fixed-term contract", ""),    # GAP
+        _cap("Position end-date (if fixed-term)", ""),               # GAP
+        _cap("Position classification", "np_classification"),
+        _cap("Contract Basis", "np_contract_basis"),
+        _cap("Number of hours worked per week", "np_part_time_hours"),
+        _cap("Payscale", "np_payscale"),
+        _cap("Grade and/or Salary", "np_grade"),
+        _cap("Does this role include clinical duties?", "np_clinical_duties"),
+    ] + _FUNDING_MANIFEST,
+    "Replacement": [
+        _cap("Replacement type", "rp_replacement_type"),
+        _cap("Name of person being replaced", "rp_name_replaced"),
+        _cap("Department", "department"),
+        _cap("Line Manager", "line_manager"),
+        _cap("Director/Head of Department", ""),                     # GAP (parked)
+        _cap("Justification for Replacement", "rp_justification"),
+        _cap("Job Title", "rp_job_title"),
+        _cap("Appointment term (Permanent / Fixed-term)", ""),       # GAP
+        _cap("Please state reasons for fixed-term contract", ""),    # GAP
+        _cap("Estimated start-date of replacement", "rp_start_date"),
+        _cap("End-date (if fixed-term)", ""),                        # GAP
+        _cap("Payscale", "rp_payscale"),
+        _cap("Grade", "rp_grade"),
+        _cap("Spinal Point", "rp_spinal_point"),
+        _cap("Position Location", "rp_location"),
+        _cap("Position Classification", "rp_classification"),
+        _cap("Position classification code", "rp_classification_code"),
+        _cap("Does this role include clinical duties?", "rp_clinical_duties"),
+        _cap("Contact with children/vulnerable adults?", "rp_child_contact"),
+        _cap("Number of hours to be worked per week", "rp_part_time_hours"),
+        _cap("Working pattern (Mon-Sun)", "rp_hours_<day>"),
+    ] + _FUNDING_MANIFEST,
+    "Extension": [
+        _cap("Purpose of Request", "ex_request_type"),
+        _cap("Employee/agency worker name", "ex_employee_name"),
+        _cap("Department", "department"),
+        _cap("Line Manager", "line_manager"),
+        _cap("Director/Head of Department", ""),                     # GAP (parked)
+        _cap("Justification", "ex_justification"),
+        _cap("Job Title", "ex_job_title"),
+        _cap("Extension from", "ex_extension_from"),
+        _cap("Extension to", "ex_extension_to"),
+        _cap("Proposed weekly working hours", "ex_part_time_hours"),
+        _cap("Working pattern (Mon-Sun)", "ex_hours_<day>"),
+        _cap("Change to grade", "ex_grade_change"),
+        _cap("Change to spinal point", "ex_spinal_point_change"),
+        _cap("Work location (city/country)", "ex_location"),
+        _cap("Effective date of change to working hours",
+             "ex_hours_effective_date"),
+        _cap("Is this an ongoing or temporary change?", "ex_change_duration"),
+        _cap("Further details (temporary change)", "ex_change_details"),
+        _cap("Affect person's other position(s)?", "ex_other_positions_detail"),
+    ] + _FUNDING_MANIFEST,
+    "Consultancy": [
+        _cap("Department", "department"),
+        _cap("Approval required for", "cy_approval_for"),
+        _cap("Name of Consultant", "cy_consultant_name"),
+        _cap("Assignment Overseer Name", "cy_overseer_name"),
+        _cap("LSTM Manager Name", "cy_lstm_manager"),
+        _cap("Director/Head of Department", ""),                     # GAP (parked)
+        _cap("Justification for Consultancy", "cy_justification"),
+        _cap("Assignment Job Title", "cy_job_title"),
+        _cap("Assignment Start Date", "cy_start_date"),
+        _cap("Assignment End-Date", "cy_end_date"),
+        _cap("Assignment Location Type", ""),                        # GAP
+        _cap("Assignment Location", "cy_location"),
+        _cap("Rate of Pay", "cy_rate_of_pay"),
+        _cap("Currency", "cy_currency"),
+        _cap("Frequency", "cy_frequency"),
+        _cap("VAT status determination", "cy_vat_status"),
+        _cap("Are expenses payable?", "cy_expenses_payable"),
+        _cap("Details of expenses payable", "cy_expenses_detail"),
+        _cap("Do you have a named consultant?", "cy_named_consultant"),
+        _cap("How was the consultant chosen?", "cy_consultant_chosen"),
+        _cap("Require HR to advertise?", "cy_hr_advertise"),
+        _cap("Budget available for recruitment?", "cy_recruit_budget"),
+        _cap("Recruitment budget", "cy_recruit_budget_amount"),
+        _cap("Suggested sources for advertisement", "cy_advert_source"),
+        _cap("Will the consultant access personal data?", "cy_personal_data"),
+        _cap("Contact with children/vulnerable adults?", "cy_child_contact"),
+        _cap("Please provide details", "cy_child_contact_detail"),
+    ] + _FUNDING_MANIFEST,
+}
+
+# Approval + processing layer — near-identical across all four documents; filled
+# by the stage steps in Phase 3, not the requester. NB the documents also
+# require an SMG/MC sign-off, for which there is no stage step yet (GAP).
+APPROVAL_MANIFEST = [
+    {"doc": "Line Manager approval",                 "field": "line_*",        "layer": "approval"},
+    {"doc": "Director/Head of Department approval",   "field": "director_*",    "layer": "approval"},
+    {"doc": "Finance approver (per funding source)",  "field": "finance_<n>_*", "layer": "approval"},
+    {"doc": "Head of Management Accounting approval",  "field": "head_mgmt_*",   "layer": "approval"},
+    {"doc": "Head of RMS approval",                   "field": "head_rms_*",    "layer": "approval"},
+    {"doc": "SMG/MC sign-off",                        "field": "",              "layer": "approval"},  # GAP: no stage step
+    {"doc": "HR sign-off",                            "field": "hr_signoff_*",  "layer": "process"},
+    {"doc": "A2A to be processed by / comments",      "field": "hr_ref, hr_notes", "layer": "process"},
+]
+
+
+def manifest_gaps() -> dict:
+    """Per type, the capture-layer fields the documents require but the wizard
+    does not yet collect (field == ''). Drives the Phase-2 gap list."""
+    return {
+        t: [e["doc"] for e in entries
+            if e["layer"] == "capture" and not e["field"]]
+        for t, entries in TYPE_FIELDS.items()
+    }
 
 
 # ---------------------------------------------------------------------------

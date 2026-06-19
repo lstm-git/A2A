@@ -91,13 +91,18 @@ def step(step_id):
             try:
                 type_map = graph.cost_centre_type_map(lm)
                 account_map = graph.cost_centre_account_map(lm)
+                finance_map = graph.cost_centre_finance_map(lm)
             except Exception as exc:
                 app.logger.warning("Cost-centre lookup failed: %s", exc)
-                type_map = account_map = {}
+                type_map = account_map = finance_map = {}
             if cc in type_map:
                 answers[f"funding_cc_type_{n}"] = type_map[cc]
             if cc in account_map:
                 answers[f"funding_account_title_{n}"] = account_map[cc]
+            if cc in finance_map:
+                answers[f"funding_rbps_approver_{n}"] = finance_map[cc]
+            # LSTM Finance Approval — placeholder routing value for now.
+            answers[f"funding_lstm_finance_{n}"] = "FBP"
 
         session.modified = True
 
@@ -120,12 +125,14 @@ def step(step_id):
     cost_centres = []
     cost_centre_types = {}
     cost_centre_accounts = {}
+    cost_centre_finance = {}
     if step_id.startswith("funding_"):
         lm = answers.get("line_manager", "")
         try:
             cost_centres = graph.cost_centres(lm)
             cost_centre_types = graph.cost_centre_type_map(lm)
             cost_centre_accounts = graph.cost_centre_account_map(lm)
+            cost_centre_finance = graph.cost_centre_finance_map(lm)
         except Exception as exc:
             app.logger.warning("Cost-centre lookup failed: %s", exc)
 
@@ -138,6 +145,7 @@ def step(step_id):
                            cost_centres=cost_centres,
                            cost_centre_types=cost_centre_types,
                            cost_centre_accounts=cost_centre_accounts,
+                           cost_centre_finance=cost_centre_finance,
                            dept_groups=step_engine.DEPARTMENT_TO_GROUP)
 
 

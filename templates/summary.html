@@ -8,7 +8,7 @@
     {% for s in active %}
       <h3>{{ s.title }}</h3>
       <dl>
-        {% for f in s.fields %}
+        {% for f in s.fields if f.type != 'hidden' %}
           <dt>{{ f.label }}</dt>
           <dd>{{ answers.get(f.name, '') or '—' }}</dd>
         {% endfor %}

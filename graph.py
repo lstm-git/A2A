@@ -34,6 +34,8 @@ COST_CENTRE_LIST_ID = "F0B05C0A-4E80-41EE-B143-AAA154B92313"
 # be read. Cost Centre Type <- Project Type Title; Account Title <- AccountTitle.
 COST_CENTRE_TYPE_COLUMN = ("Project Type Title", "Project_x0020_Type_x0020_Title")
 COST_CENTRE_ACCOUNT_COLUMN = ("AccountTitle", "AccountTitle")
+# RBPS Approver (hidden) <- Finance Contact Name.
+COST_CENTRE_FINANCE_COLUMN = ("Finance Contact Name", "Finance_x0020_Contact_x0020_Name")
 COST_CENTRE_TTL = 300  # seconds to cache the raw list
 
 _lock = threading.Lock()
@@ -172,10 +174,11 @@ def _cost_centre_items() -> list[dict]:
 
     type_field = _cc_field(COST_CENTRE_TYPE_COLUMN)
     account_field = _cc_field(COST_CENTRE_ACCOUNT_COLUMN)
+    finance_field = _cc_field(COST_CENTRE_FINANCE_COLUMN)
     url = (
         f"{GRAPH}/sites/{COST_CENTRE_SITE}/lists/{COST_CENTRE_LIST_ID}/items"
         "?$expand=fields($select=Title,Authorised_x0020_Email_x0020_Add,"
-        f"{type_field},{account_field})&$top=500"
+        f"{type_field},{account_field},{finance_field})&$top=500"
     )
     resp = requests.get(
         url, headers={"Authorization": f"Bearer {_token_value()}"}, timeout=TIMEOUT)
@@ -188,6 +191,7 @@ def _cost_centre_items() -> list[dict]:
             "authorised": (f.get("Authorised_x0020_Email_x0020_Add") or "").lower(),
             "type": (f.get(type_field) or "").strip(),
             "account": (f.get(account_field) or "").strip(),
+            "finance": (f.get(finance_field) or "").strip(),
         })
 
     with _lock:
@@ -226,3 +230,13 @@ def cost_centre_account_map(email: str) -> dict:
     Drives the read-only Account Title, auto-filled from the chosen Cost Centre's
     record (the list's AccountTitle column). Returns {} when Graph is unconfigured."""
     return {it["title"]: it["account"] for it in _authorised_items(email) if it["title"]}
+
+
+def cost_centre_finance_map(email: str) -> dict:
+    """{cost_centre_title: finance_contact_name} for cost centres authorised to
+    `email`.
+
+    Drives the hidden RBPS Approver field, auto-filled from the chosen Cost
+    Centre's record (the list's Finance Contact Name column). Returns {} when
+    Graph is unconfigured."""
+    return {it["title"]: it["finance"] for it in _authorised_items(email) if it["title"]}
