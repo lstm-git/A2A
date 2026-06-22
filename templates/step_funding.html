@@ -71,15 +71,23 @@
         </div>
       </div>
 
+      {# Running total of the earlier sources, so the requester knows how much of
+         the 100% is still to allocate on this page. #}
+      {% set prior = namespace(total=0.0) %}
+      {% for i in range(1, n) %}
+        {% set prior.total = prior.total + (answers.get('funding_pct_' ~ i) | float(0)) %}
+      {% endfor %}
+      {% if n > 1 %}
+        <p class="field-hint">Sources 1–{{ n - 1 }} so far allocate
+          {{ '%g' % prior.total }}% — this source needs to bring the total to 100%.</p>
+      {% endif %}
+
       {{ F.row(step.fields, 'funding_pct_' ~ n, answers) }}
+      {% if errors.get('funding_pct_' ~ n) %}
+        <div class="field-error">{{ errors['funding_pct_' ~ n] }}</div>
+      {% endif %}
       {{ F.row(step.fields, 'funding_start_' ~ n, answers) }}
       {{ F.row(step.fields, 'funding_end_' ~ n, answers) }}
-
-      {# Add-another question: shown only while this source's % of total funding
-         is below 100 (numeric conditional). Absent on the last source (n == 5). #}
-      {% if n < 5 %}
-        {{ F.numeric_conditional_row(step.fields, 'add_funding_' ~ (n + 1), answers) }}
-      {% endif %}
 
       {{ F.attachments_placeholder() }}
 

@@ -455,3 +455,66 @@
 - Phase 2 (PDF), Phase 3 (approval workflow + email), Phase 4 (dashboards).
 - "Completed A2As" — the dashboard/list view (Phase 4).
 - Validation (required fields), authentication (full SSO optional, post-v1).
+
+## 2026-06-22 — Funding "add another" gate made cumulative
+- **Flow review vs Danny's intended order** — confirmed the wizard + stage chain
+  match (Purpose → Type → Funding 1 → Line → Finance 1 → Head of Mgmt Accounting
+  → HR Sign-off → HR Processing). Danny confirmed **Director/HoD and Head of RMS
+  stages stay** (his summary just omitted them); no change there.
+- **Bug found & fixed:** the "Do you need to add an additional funding source?"
+  question was gated on the *current* source's % only (`show_when_lt:
+  funding_pct_<n> < 100`), so e.g. 60% + 40% (= 100% total) still offered a 3rd
+  source. Intended logic is **cumulative**: offer source n+1 only while the
+  running total of sources 1..n is below 100%.
+- **Implementation** (no picker.js change — kept the single-field live compare):
+  - `steps.py`: the `add_funding_<n+1>` field now also carries
+    `sum_prior = [funding_pct_1 .. funding_pct_<n-1>]`.
+  - `_form_macros.html` `numeric_conditional_row`: folds the stored `sum_prior`
+    total into the threshold (`threshold = 100 - prior_total`), since cumulative
+    < 100  ==  funding_pct_n < 100 - prior_total. Earlier sources are fixed by
+    the time you're on page n, so the live JS still only watches funding_pct_n.
+  - `step_funding.html`: comment updated to describe the cumulative gate.
+- **Verified** (Jinja render harness): 60+40→no 3rd source; 60+30→offered;
+  100 on source 1→no 2nd; 70→offered; empty current %→hidden. data-show-lt
+  renders the reduced threshold (e.g. 40.0 when source 1 = 60%).
+
+## 2026-06-22 — Finance Approval stages made %-driven
+- **Rule (Danny):** if Source of Funding 1 != 100% a second Finance Approval is
+  needed; generalised to Finance Approval n appearing while sources 1..n-1 don't
+  yet total 100%.
+- `steps.py`: finance approval stages now use new `funding_needed(n)` instead of
+  `funding_active(n)`. `funding_needed`: source 1 always; for n>=2, visible iff
+  the previous source's % is entered **and** `_funding_pct_total(1..n-1) < 100`.
+  Added `_funding_pct_total()` helper.
+- **Gotcha handled:** a pure cumulative-% test cascades — blank later sources
+  count as 0%, so the total never hits 100 and every approval shows. The
+  'previous source entered' guard fixes it (source n only relevant once source
+  n-1 exists). `funding_active` is unchanged and still gates the funding *entry*
+  pages.
+- **Verified** via `stage_steps`: s1=100→_1; s1=60→_1,_2; s1=60,s2=40→_1,_2;
+  s1=50,s2=30→_1,_2,_3; +s3=20→_1,_2,_3; empty→_1.
+
+## 2026-06-22 — Funding unified to %-driven + 100% validation
+- **Unify (Danny):** dropped the "Do you need to add an additional funding
+  source?" Yes/No. Source of Funding n now appears via the same `funding_needed(n)`
+  rule its Finance Approval uses — a single percentage-driven gate for both the
+  wizard pages and the approval chain. `steps.py`: funding entry steps switched
+  from `funding_active(n)` to `funding_needed(n)`; the `add_funding_<n+1>` field
+  removed; loop comment updated.
+  - Removed the now-dead `funding_active()` (steps.py), the
+    `numeric_conditional_row` macro (_form_macros.html) and the
+    `data-show-when-lt` handler (picker.js) — all superseded by the %-driven
+    flow. Grep confirms no residual references.
+  - `step_funding.html`: removed the add-another row; added a server-rendered
+    running-total hint ("Sources 1..n-1 so far allocate X% …").
+- **Validation (Danny):** funding % must total exactly 100.
+  - `steps.py`: `validate_funding(step_id, answers)` — rejects non-numeric %,
+    blocks totals >100, and on the final funding source requires the total to be
+    exactly 100. Plus `funding_total(answers)` helper.
+  - `app.py`: per-page — `errors.update(validate_funding(...))` on funding POSTs;
+    defensive — `/submit` refuses to persist unless the total is 100 (redirects
+    to summary). `step_funding.html` renders the `funding_pct_<n>` error.
+- **Verified** (Flask test client): f1=60 auto-advances to funding_2 (no prompt);
+  forced /submit at 60% → bounced to summary; f2=40 (=100%) → summary; f2=50
+  (over) → re-renders funding_2 with the "cannot exceed 100%" error. Engine unit
+  checks: numeric/over-100/blank/final-source all flag correctly.

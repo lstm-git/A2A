@@ -85,15 +85,77 @@ def approval_fields(prefix: str) -> list:
     ]
 
 
-def funding_active(n: int) -> Callable:
-    """Source of Funding 1 always shows; 2-5 appear only if the previous step
-    answered 'Yes' to 'add an additional funding source'. Finance Approval n
-    reuses this."""
+def _funding_pct_total(answers, upto: int) -> float:
+    """Running total of funding percentages for sources 1..upto (blanks/bad
+    values count as 0)."""
+    total = 0.0
+    for i in range(1, upto + 1):
+        try:
+            total += float(answers.get(f"funding_pct_{i}") or 0)
+        except (TypeError, ValueError):
+            pass
+    return total
+
+
+def funding_needed(n: int) -> Callable:
+    """Whether Source of Funding n (and its Finance Approval n) is needed.
+
+    The wizard and the approval chain share this single %-driven rule (unified —
+    there is no longer an 'add another funding source?' question). Source n is
+    needed when (a) the previous source (n-1) actually exists — its % is entered
+    — and (b) the earlier sources (1..n-1) don't yet total 100%, so more funding
+    is still required. Source 1 is always needed. For n=2 this is simply 'Source
+    1 is entered and != 100%'.
+
+    The 'previous source entered' guard stops the chain cascading: without it,
+    blank later sources count as 0% so the running total never reaches 100 and
+    every source/approval would show."""
     def cond(answers):
         if n == 1:
             return True
-        return answers.get(f"add_funding_{n}") == "Yes"
+        prev = answers.get(f"funding_pct_{n - 1}")
+        if prev in (None, ""):
+            return False
+        return _funding_pct_total(answers, n - 1) < 100
     return cond
+
+
+def funding_total(answers) -> float:
+    """Total of all funding percentages entered (sources 1..5)."""
+    return _funding_pct_total(answers, 5)
+
+
+def validate_funding(step_id: str, answers: dict) -> dict:
+    """Errors for a Source of Funding step's % entry. The percentages may never
+    exceed 100, and once this is the final funding source the total must be
+    exactly 100 (so a part-funded request can't slip through). Returns
+    {field_name: message}."""
+    errors = {}
+    n = int(step_id.split("_")[1])
+    pct_field = f"funding_pct_{n}"
+
+    raw = answers.get(pct_field, "")
+    if raw not in (None, ""):
+        try:
+            float(raw)
+        except (TypeError, ValueError):
+            errors[pct_field] = "Enter the percentage as a number."
+            return errors
+
+    total = funding_total(answers)
+    if total > 100 + 1e-9:
+        errors[pct_field] = (
+            f"Funding percentages add up to {total:g}% - they cannot exceed 100%.")
+        return errors
+
+    # If no further funding source will follow, this is the final one, so the
+    # running total has to land on exactly 100%.
+    active_ids = {s.id for s in active_steps(answers)}
+    more_to_come = any(f"funding_{m}" in active_ids for m in range(n + 1, 6))
+    if not more_to_come and abs(total - 100) > 1e-9:
+        errors[pct_field] = (
+            f"Funding must total exactly 100% - the sources so far total {total:g}%.")
+    return errors
 
 
 # ---------------------------------------------------------------------------
@@ -530,9 +592,10 @@ STEPS.append(Step("consultancy", "Consultancy",
 # 3. Sources of Funding 1-5 (each can spawn the next).
 #    Cost Centre is backed by the OnTrack SharePoint Cost Centre list (the same
 #    list the Catering workflow uses), filtered to those authorised to the Line
-#    Manager; options are fetched in app.py and rendered server-side. The
-#    "add an additional funding source?" question appears only while the running
-#    % of total funding is below 100 (numeric `show_when_lt`).
+#    Manager; options are fetched in app.py and rendered server-side. Each source
+#    appears automatically (no "add another?" prompt) while the earlier sources
+#    don't yet total 100% — see funding_needed(); validate_funding() enforces a
+#    100% total.
 for n in range(1, 6):
     f = [
         {"name": f"funding_cost_centre_{n}", "label": "Cost Centre",
@@ -560,16 +623,8 @@ for n in range(1, 6):
         {"name": f"funding_end_{n}", "label": "Funding end-date",
          "type": "date", "required": True},
     ]
-    if n < 5:
-        # Yes/No, defaults No (so it's satisfied while hidden — avoids the
-        # hidden-required pitfall). Shown only when this source's % < 100.
-        f.append({"name": f"add_funding_{n + 1}",
-                  "label": "Do you need to add an additional funding source?",
-                  "type": "radio", "options": YES_NO, "default": "No",
-                  "required": True,
-                  "show_when_lt": (f"funding_pct_{n}", 100)})
     STEPS.append(Step(f"funding_{n}", f"Source of Funding {n}",
-                      fields=f, condition=funding_active(n),
+                      fields=f, condition=funding_needed(n),
                       template="step_funding.html"))
 
 # 4. Approval chain — these are workflow STAGES, not requester wizard pages
@@ -580,11 +635,13 @@ STEPS.append(Step("line_approval", "Line Approval Manager",
 STEPS.append(Step("director_approval", "Director/Head of Department Approval",
                   fields=approval_fields("director"), stage=True))
 
-# Finance Approval 1-5 — one per active funding source
+# Finance Approval 1-5 — one per funding source actually needed. Visible while
+# the earlier sources don't yet total 100% (so Finance Approval 2 appears when
+# Source of Funding 1 != 100%, Approval 3 when 1+2 < 100%, etc.).
 for n in range(1, 6):
     STEPS.append(Step(f"finance_approval_{n}", f"Finance Approval {n}",
                       fields=approval_fields(f"finance_{n}"),
-                      condition=funding_active(n), stage=True))
+                      condition=funding_needed(n), stage=True))
 
 STEPS.append(Step("head_mgmt_accounting", "Head of Management Accounting Approval",
                   fields=approval_fields("head_mgmt"), stage=True))

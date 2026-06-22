@@ -107,6 +107,8 @@ def step(step_id):
         session.modified = True
 
         errors = validate_step(current, answers)
+        if step_id.startswith("funding_"):
+            errors.update(step_engine.validate_funding(step_id, answers))
         if not errors:
             active = step_engine.active_steps(answers)
             idx = step_engine.index_of(active, step_id)
@@ -174,6 +176,10 @@ def submit():
     answers = get_answers()
     if not answers.get("purpose"):
         return redirect(url_for("index"))
+    # Defensive: never persist a part-funded request (per-page validation should
+    # already guarantee 100%, but block a hand-crafted POST straight to submit).
+    if abs(step_engine.funding_total(answers) - 100) > 1e-9:
+        return redirect(url_for("summary"))
     ref = dbstore.create_request(answers)
     session["answers"] = {}  # the request is saved; start a clean session
     session.modified = True

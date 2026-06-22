@@ -71,36 +71,6 @@ document.querySelectorAll("[data-show-when]").forEach((wrap) => {
   sync();
 });
 
-// Numeric conditional rows: show a wrapped row only when its trigger number
-// field is non-empty AND less than the threshold (data-show-lt). Mirrors the
-// equality handler's reset-on-hide so dependent fields collapse cleanly.
-document.querySelectorAll("[data-show-when-lt]").forEach((wrap) => {
-  const name = wrap.dataset.showWhenLt;
-  const threshold = parseFloat(wrap.dataset.showLt);
-  const field = document.querySelector('[name="' + name + '"]');
-  if (!field) return;
-  function sync() {
-    const v = parseFloat(field.value);
-    const show = field.value.trim() !== "" && !isNaN(v) && v < threshold;
-    if (wrap.hidden === !show) return; // no change since last sync
-    wrap.hidden = !show;
-    if (!show) {
-      wrap.querySelectorAll("input, select, textarea").forEach((el) => {
-        if (el.type === "radio" || el.type === "checkbox") {
-          el.checked = el.hasAttribute("data-default");
-        } else {
-          el.value = "";
-        }
-        el.dispatchEvent(new Event("change", { bubbles: true }));
-        el.dispatchEvent(new Event("input", { bubbles: true }));
-      });
-    }
-  }
-  field.addEventListener("input", sync);
-  field.addEventListener("change", sync);
-  sync();
-});
-
 // Working pattern: live total. The pattern is required and must add up to the
 // weekly target before the form can be submitted. The target is taken from a
 // contract-basis select (Full-time -> the number in its label, e.g. 35) plus an

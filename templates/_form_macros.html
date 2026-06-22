@@ -84,20 +84,6 @@
   </div>
 {% endmacro %}
 
-{# Numeric conditional row: shown only while the trigger number field is
-   non-empty AND less than the field's `show_when_lt` threshold (toggled live by
-   picker.js, which also clears the row when it hides). #}
-{% macro numeric_conditional_row(fields, name, answers) %}
-  {% set f = fields | selectattr('name', 'equalto', name) | first %}
-  {% set trigger = f.show_when_lt[0] %}
-  {% set threshold = f.show_when_lt[1] %}
-  {% set tv = answers.get(trigger) %}
-  {% set show = tv not in (None, '') and (tv | float(threshold)) < threshold %}
-  <div data-show-when-lt="{{ trigger }}" data-show-lt="{{ threshold }}"
-       {{ '' if show else 'hidden' }}>
-    {{ row(fields, name, answers) }}
-  </div>
-{% endmacro %}
 
 {# Cost Centre select row. Options are supplied by the server (the OnTrack
    SharePoint list, filtered to the Line Manager) rather than from f.options. #}
