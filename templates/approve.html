@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">A2A {{ record.ref }} — {{ approval.role }}</h2>
+    <p class="intro">
+      Request type: <strong>{{ record.purpose }}</strong> ·
+      Raised by: {{ record.requester or '—' }} ·
+      Status: {{ record.status }}
+    </p>
+
+    {# Read-only view of what the requester captured. #}
+    {% for s in active %}
+      <h3>{{ s.title }}</h3>
+      <dl>
+        {% for f in s.fields if f.type != 'hidden' %}
+          <dt>{{ f.label }}</dt>
+          <dd>{{ answers.get(f.name, '') or '—' }}</dd>
+        {% endfor %}
+      </dl>
+    {% endfor %}
+
+    {% if approval.status == 'pending' %}
+      <h3>Your decision</h3>
+      <form method="post" class="a2a-form">
+        <div class="form-row">
+          <label>Decision <span class="req">*</span></label>
+          <div class="control">
+            <div class="radio-group">
+              {% for d in decisions %}
+                <label class="opt-inline">
+                  <input type="radio" name="decision" value="{{ d }}" required> {{ d }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Comments</label>
+          <div class="control">
+            <textarea name="comments" rows="3"
+                      placeholder="Required if rejecting or referring back…"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" type="submit">Submit decision</button>
+        </div>
+      </form>
+    {% else %}
+      <div class="readonly-field">
+        You have already recorded a decision for this A2A
+        (<strong>{{ approval.decision or approval.status }}</strong>).
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

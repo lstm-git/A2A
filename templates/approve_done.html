@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">Decision recorded</h2>
+    {% if result.outcome == 'noop' %}
+      <p class="intro">This A2A had already been decided — no change made.</p>
+    {% elif result.outcome == 'returned' %}
+      <p class="intro">A2A <strong>{{ result.ref }}</strong> was
+        <strong>{{ result.status }}</strong> and has been returned to the
+        previous step. An explanation email has been sent.</p>
+    {% elif result.outcome == 'completed' %}
+      <p class="intro">Thank you. Your approval was the last one required —
+        A2A <strong>{{ result.ref }}</strong> is now fully approved.</p>
+    {% else %}
+      <p class="intro">Thank you. Your approval for A2A
+        <strong>{{ result.ref }}</strong> ({{ result.role }}) has been recorded.
+        Any next-phase approvers have been notified.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

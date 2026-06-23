@@ -54,6 +54,19 @@ def init_db() -> None:
                 FOREIGN KEY (request_id) REFERENCES a2a_requests(id)
             )
         """)
+        # Phase-3 columns added after the table first shipped — add any missing
+        # ones so existing dev DBs migrate without a drop/recreate.
+        _add_column(conn, "a2a_approvals", "phase", "TEXT")
+        _add_column(conn, "a2a_approvals", "status", "TEXT NOT NULL DEFAULT 'pending'")
+        _add_column(conn, "a2a_approvals", "notified_at", "TEXT")
+
+
+def _add_column(conn, table: str, column: str, decl: str) -> None:
+    """Add `column` to `table` if it isn't already present (SQLite has no
+    ADD COLUMN IF NOT EXISTS)."""
+    existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in existing:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
 
 
 def create_request(answers: dict) -> str:
@@ -93,3 +106,75 @@ def list_requests(requester: str = "") -> list[dict]:
     sql += " ORDER BY id DESC"
     with get_db() as conn:
         return [dict(r) for r in conn.execute(sql, params).fetchall()]
+
+
+def set_request_status(request_id: int, status: str) -> None:
+    with get_db() as conn:
+        conn.execute("UPDATE a2a_requests SET status = ? WHERE id = ?",
+                     (status, request_id))
+
+
+def get_request_by_id(request_id: int) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM a2a_requests WHERE id = ?", (request_id,)).fetchone()
+    if not row:
+        return None
+    rec = dict(row)
+    rec["answers"] = json.loads(rec.get("answers_json") or "{}")
+    return rec
+
+
+# ---------------------------------------------------------------------------
+# Approvals (Phase 3)
+# ---------------------------------------------------------------------------
+def create_approval(request_id: int, stage: str, role: str, phase: str,
+                    approver_email: str, token: str) -> None:
+    """Insert one pending approval row for a stage of a request."""
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO a2a_approvals (request_id, stage, role, phase, "
+            "approver_email, token, status) VALUES (?,?,?,?,?,?, 'pending')",
+            (request_id, stage, role, phase, approver_email, token))
+
+
+def get_approval_by_token(token: str) -> dict | None:
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM a2a_approvals WHERE token = ?", (token,)).fetchone()
+    return dict(row) if row else None
+
+
+def list_approvals(request_id: int) -> list[dict]:
+    with get_db() as conn:
+        return [dict(r) for r in conn.execute(
+            "SELECT * FROM a2a_approvals WHERE request_id = ? ORDER BY id",
+            (request_id,)).fetchall()]
+
+
+def record_decision(token: str, status: str, decision: str,
+                    comments: str) -> None:
+    """Set an approval's outcome (status: approved / rejected / referred)."""
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE a2a_approvals SET status = ?, decision = ?, comments = ?, "
+            "decided_at = ? WHERE token = ?",
+            (status, decision, comments, now, token))
+
+
+def mark_notified(approval_id: int) -> None:
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with get_db() as conn:
+        conn.execute("UPDATE a2a_approvals SET notified_at = ? WHERE id = ?",
+                     (now, approval_id))
+
+
+def phase_status(request_id: int, phase: str) -> dict:
+    """Counts for a phase: {'total', 'approved', 'pending', 'blocked'} where
+    blocked = rejected or referred."""
+    rows = [a for a in list_approvals(request_id) if a["phase"] == phase]
+    approved = sum(1 for a in rows if a["status"] == "approved")
+    blocked = sum(1 for a in rows if a["status"] in ("rejected", "referred"))
+    return {"total": len(rows), "approved": approved,
+            "pending": len(rows) - approved - blocked, "blocked": blocked}

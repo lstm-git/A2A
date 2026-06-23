@@ -13,6 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
+import approvals
 import dbstore
 import graph
 import steps as step_engine
@@ -181,9 +182,36 @@ def submit():
     if abs(step_engine.funding_total(answers) - 100) > 1e-9:
         return redirect(url_for("summary"))
     ref = dbstore.create_request(answers)
+    # Phase 3: create the approval rows and notify the first phase's approvers.
+    approvals.start(ref, _approve_url)
     session["answers"] = {}  # the request is saved; start a clean session
     session.modified = True
     return redirect(url_for("submitted", ref=ref))
+
+
+def _approve_url(token: str) -> str:
+    """Absolute approve link for emails (prefix-aware behind the proxy)."""
+    return url_for("approve", token=token, _external=True)
+
+
+@app.route("/approve/<token>", methods=["GET", "POST"])
+def approve(token):
+    approval = dbstore.get_approval_by_token(token)
+    if approval is None:
+        return render_template("approve_invalid.html"), 404
+    record = dbstore.get_request_by_id(approval["request_id"])
+    answers = record["answers"]
+
+    if request.method == "POST" and approval["status"] == "pending":
+        result = approvals.record(
+            token, request.form.get("decision", ""),
+            request.form.get("comments", ""), _approve_url)
+        return render_template("approve_done.html", result=result)
+
+    active = step_engine.active_steps(answers)
+    return render_template("approve.html", approval=approval, record=record,
+                           answers=answers, active=active,
+                           decisions=step_engine.DECISION_CHOICES)
 
 
 @app.route("/submitted/<ref>")

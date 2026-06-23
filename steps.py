@@ -20,6 +20,10 @@ class Step:
     # Approval/workflow stages (stage=True) are NOT part of the requester wizard;
     # active_steps() excludes them. They become the approval chain in Phase 3.
     stage: bool = False
+    # Phase 3 routing: which gated phase a stage belongs to (see PHASES). Approvers
+    # in the same phase are notified together and act in parallel; the next phase
+    # opens only once every approval in the current phase is approved.
+    phase: str = ""
 
 
 PURPOSE_CHOICES = ["New Position", "Replacement", "Extension", "Consultancy"]
@@ -628,32 +632,63 @@ for n in range(1, 6):
                       template="step_funding.html"))
 
 # 4. Approval chain — these are workflow STAGES, not requester wizard pages
-#    (stage=True), so active_steps() excludes them. They are routed to the
-#    relevant approvers in Phase 3; the field sets are kept for that.
+#    (stage=True), so active_steps() excludes them. They run as gated phases
+#    (see PHASES): approvers in a phase are notified together and act in
+#    parallel; the next phase opens only once the current phase is fully approved.
+#    Phase A: Line Manager + Finance Approval(s).  Phase B: Head of Management
+#    Accounting + Head of RMS.  Then HR sign-off, then HR processing.
 STEPS.append(Step("line_approval", "Line Approval Manager",
-                  fields=approval_fields("line"), stage=True))
-STEPS.append(Step("director_approval", "Director/Head of Department Approval",
-                  fields=approval_fields("director"), stage=True))
+                  fields=approval_fields("line"), stage=True, phase="A"))
 
 # Finance Approval 1-5 — one per funding source actually needed. Visible while
 # the earlier sources don't yet total 100% (so Finance Approval 2 appears when
-# Source of Funding 1 != 100%, Approval 3 when 1+2 < 100%, etc.).
+# Source of Funding 1 != 100%, Approval 3 when 1+2 < 100%, etc.). Phase A.
 for n in range(1, 6):
     STEPS.append(Step(f"finance_approval_{n}", f"Finance Approval {n}",
                       fields=approval_fields(f"finance_{n}"),
-                      condition=funding_needed(n), stage=True))
+                      condition=funding_needed(n), stage=True, phase="A"))
 
 STEPS.append(Step("head_mgmt_accounting", "Head of Management Accounting Approval",
-                  fields=approval_fields("head_mgmt"), stage=True))
+                  fields=approval_fields("head_mgmt"), stage=True, phase="B"))
 STEPS.append(Step("head_rms", "Head of RMS Approval",
-                  fields=approval_fields("head_rms"), stage=True))
+                  fields=approval_fields("head_rms"), stage=True, phase="B"))
 STEPS.append(Step("hr_signoff", "HR Sign-off",
-                  fields=approval_fields("hr_signoff"), stage=True))
+                  fields=approval_fields("hr_signoff"), stage=True,
+                  phase="HR_SIGNOFF"))
 STEPS.append(Step("hr_processing", "HR Processing", stage=True,
+                  phase="HR_PROCESSING",
                   fields=[
                       {"name": "hr_ref", "label": "HR reference number", "type": "text"},
                       {"name": "hr_notes", "label": "Processing notes", "type": "textarea"},
                   ]))
+
+# Gated phases, in order. Approvers within a phase act in parallel; a phase
+# opens only when the previous one is fully approved.
+PHASES = ["A", "B", "HR_SIGNOFF", "HR_PROCESSING"]
+
+
+def stages_in_phase(answers: dict, phase: str) -> list:
+    """Active stage steps belonging to `phase`, in order."""
+    return [s for s in stage_steps(answers) if s.phase == phase]
+
+
+def next_phase(answers: dict, phase: str) -> str:
+    """The next phase (after `phase`) that actually has active stages, or ''."""
+    seen = False
+    for p in PHASES:
+        if seen and stages_in_phase(answers, p):
+            return p
+        if p == phase:
+            seen = True
+    return ""
+
+
+def first_phase(answers: dict) -> str:
+    """The earliest phase with active stages (normally 'A')."""
+    for p in PHASES:
+        if stages_in_phase(answers, p):
+            return p
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -717,7 +752,6 @@ TYPE_FIELDS = {
         _cap("Name of person being replaced", "rp_name_replaced"),
         _cap("Department", "department"),
         _cap("Line Manager", "line_manager"),
-        _cap("Director/Head of Department", ""),                     # GAP (parked)
         _cap("Justification for Replacement", "rp_justification"),
         _cap("Job Title", "rp_job_title"),
         _cap("Appointment term (Permanent / Fixed-term)", ""),       # GAP
@@ -740,7 +774,6 @@ TYPE_FIELDS = {
         _cap("Employee/agency worker name", "ex_employee_name"),
         _cap("Department", "department"),
         _cap("Line Manager", "line_manager"),
-        _cap("Director/Head of Department", ""),                     # GAP (parked)
         _cap("Justification", "ex_justification"),
         _cap("Job Title", "ex_job_title"),
         _cap("Extension from", "ex_extension_from"),
@@ -762,7 +795,6 @@ TYPE_FIELDS = {
         _cap("Name of Consultant", "cy_consultant_name"),
         _cap("Assignment Overseer Name", "cy_overseer_name"),
         _cap("LSTM Manager Name", "cy_lstm_manager"),
-        _cap("Director/Head of Department", ""),                     # GAP (parked)
         _cap("Justification for Consultancy", "cy_justification"),
         _cap("Assignment Job Title", "cy_job_title"),
         _cap("Assignment Start Date", "cy_start_date"),
@@ -792,7 +824,6 @@ TYPE_FIELDS = {
 # require an SMG/MC sign-off, for which there is no stage step yet (GAP).
 APPROVAL_MANIFEST = [
     {"doc": "Line Manager approval",                 "field": "line_*",        "layer": "approval"},
-    {"doc": "Director/Head of Department approval",   "field": "director_*",    "layer": "approval"},
     {"doc": "Finance approver (per funding source)",  "field": "finance_<n>_*", "layer": "approval"},
     {"doc": "Head of Management Accounting approval",  "field": "head_mgmt_*",   "layer": "approval"},
     {"doc": "Head of RMS approval",                   "field": "head_rms_*",    "layer": "approval"},

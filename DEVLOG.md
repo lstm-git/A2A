@@ -518,3 +518,60 @@
   forced /submit at 60% → bounced to summary; f2=40 (=100%) → summary; f2=50
   (over) → re-renders funding_2 with the "cannot exceed 100%" error. Engine unit
   checks: numeric/over-100/blank/final-source all flag correctly.
+
+## 2026-06-23 — Approval routing model decided + Director/HoD removed
+- **Danny:** the approval stages are NOT sequential. They run as gated phases,
+  parallel within each phase:
+  - **Phase A (parallel):** Line Manager + Finance Approval(s) (one per funding
+    source) — all notified on submit.
+  - **Phase B (parallel):** Head of Management Accounting + Head of RMS —
+    notified once Phase A completes.
+  - **Tail (sequential):** HR Sign-off → HR Processing.
+- So the stage order in steps.py is presentation order; the live structure is
+  phase-gated. Next work is Phase 3 notifications + per-approver tracking
+  (email-with-link, Catering token pattern, SMTP relay).
+- **Director/Head of Department REMOVED** (Danny: not required) — dropped the
+  `director_approval` stage, its APPROVAL_MANIFEST line, and the three
+  `Director/Head of Department` capture-GAP entries (Replacement/Extension/
+  Consultancy). Chain is now Line → Finance(n) → Head of Mgmt Accounting →
+  Head of RMS → HR Sign-off → HR Processing. Verified via `stage_steps` +
+  `manifest_gaps` (no Director residue; `grep director *.py` clean).
+- **Phase-3 decisions (placeholders for now):** every fixed role mailbox (Finance
+  approver, Head of Mgmt Accounting, Head of RMS, HR) and the rejection-
+  explanation email all use **Danny's address** (daniel.williams@lstmed.ac.uk)
+  until real ones are supplied. Line Manager is the only real address. Finance
+  approver name→email resolution still TBC.
+- **Rejection behaviour:** reject / refer-back returns the A2A to the **previous
+  step**, with an email explanation.
+
+## 2026-06-23 — Phase 3 scaffold: approval notifications + per-approver action
+- Built the approval workflow end to end (dev-safe). New/changed:
+  - `steps.py`: `Step.phase`; stages tagged A / B / HR_SIGNOFF / HR_PROCESSING.
+    Added `PHASES`, `stages_in_phase()`, `next_phase()`, `first_phase()`.
+  - `dbstore.py`: migrated `a2a_approvals` (added `phase`, `status`,
+    `notified_at` via `_add_column` — idempotent, preserves existing rows).
+    Added create_approval / get_approval_by_token / list_approvals /
+    record_decision / mark_notified / phase_status / set_request_status /
+    get_request_by_id.
+  - `notify.py` (new): SMTP via the LSTM relay (`smtprelay.lstmed.ac.uk:25`, no
+    auth, sender `a2a-smtp@lstmed.ac.uk`) — same relay as Catering/Room Booking.
+    **Dev-safe:** logs instead of sending unless `A2A_EMAIL_ENABLED=1`. HTML
+    builders for the approval-request and rejection emails.
+  - `approvals.py` (new): `start(ref)` creates per-stage rows + notifies Phase A;
+    `record(token, decision, comments)` applies a decision, advances to the next
+    phase when the current one is fully approved, or on reject/refer-back marks
+    the request 'Returned' and emails an explanation. Mailboxes are PLACEHOLDERS
+    = `A2A_PLACEHOLDER_EMAIL` (Danny) except Line Manager (from the form).
+  - `app.py`: `submit()` now calls `approvals.start()`; new `/approve/<token>`
+    route (GET = read-only A2A + decision form; POST = record decision).
+  - Templates: `approve.html`, `approve_done.html`, `approve_invalid.html`.
+  - `.env.example`: `A2A_EMAIL_ENABLED` / `A2A_SMTP_*` / `A2A_FROM_EMAIL` /
+    `A2A_BASE_URL` / `A2A_PLACEHOLDER_EMAIL`.
+- **Verified** (Flask test client, scratch DB, emails captured): submit notifies
+  Phase A (Line + Finance×2); phase only advances once ALL its approvers approve;
+  A→B→HR sign-off→HR processing→**Approved**; parallel-within-phase confirmed;
+  re-deciding a token is blocked; reject → **Returned** + explanation email.
+  Migration idempotent on an old-schema DB with data.
+- **Not yet:** real mailboxes (all placeholder), finance approver name→email,
+  reminders, HR-processing-specific fields on the action page, dashboards
+  (Phase 4), PDF (Phase 2). Email stays log-only until `A2A_EMAIL_ENABLED=1`.
