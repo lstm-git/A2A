@@ -575,3 +575,27 @@
 - **Not yet:** real mailboxes (all placeholder), finance approver name→email,
   reminders, HR-processing-specific fields on the action page, dashboards
   (Phase 4), PDF (Phase 2). Email stays log-only until `A2A_EMAIL_ENABLED=1`.
+
+## 2026-06-23 — Phase 4: dashboards (+ Phase 2 PDF deferred)
+- **PDF deferred** by Danny — desktop Office365/Adobe can't generate server-side
+  on the Linux VM; parked the engine choice (print-HTML vs python-docx vs a PDF
+  lib). No PDF code yet.
+- **Dashboards built:**
+  - `app.py`: `/dashboard` (status buckets via `_bucket()`:
+    in_progress / completed = 'Approved' / returned = 'Returned'; `?view=` tab),
+    `/a2a/<ref>` (captured answers + live approval-progress table), `/pending`
+    ('Pending my approval' — open approvals, optional `?email=` filter).
+  - `dbstore.py`: `list_pending_approvals(email)` (joins approvals→requests);
+    `cancel_pending_approvals(request_id)`.
+  - Templates: `dashboard.html`, `a2a_detail.html`, `pending.html`; header nav
+    (New A2A / Dashboard) in base.html; `submitted.html` now links to the record;
+    dashboard/grid/tab/status-badge CSS added to style.css.
+- **Reject now stands down siblings:** rejecting/referring sets the request
+  'Returned' AND cancels the other still-pending approvals
+  (`cancel_pending_approvals`), so a returned A2A no longer shows actionable
+  approvals and a stale link can't advance it (token → noop). Verified.
+- **Verified** (test client, scratch DB): bucket filtering (all/in_progress/
+  completed/returned) lists the right refs; detail shows approval progress;
+  /pending excludes returned siblings; reject cancels sibling + status stays
+  Returned; all routes return expected codes incl. 404 bad token / redirect on
+  unknown ref.

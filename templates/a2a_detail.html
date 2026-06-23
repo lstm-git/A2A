@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">A2A {{ record.ref }}</h2>
+    <p class="intro">
+      Type: <strong>{{ record.purpose }}</strong> ·
+      Raised by: {{ record.requester or '—' }} ·
+      Status: <span class="status status-{{
+        'completed' if record.status == 'Approved' else
+        'returned' if record.status == 'Returned' else 'in_progress' }}">{{ record.status }}</span>
+    </p>
+
+    <h3>Approval progress</h3>
+    {% if approvals %}
+      <table class="grid">
+        <thead>
+          <tr><th>Phase</th><th>Role</th><th>Approver</th>
+              <th>Status</th><th>Decision</th><th>Decided</th></tr>
+        </thead>
+        <tbody>
+          {% for a in approvals %}
+            <tr>
+              <td>{{ a.phase }}</td>
+              <td>{{ a.role }}</td>
+              <td>{{ a.approver_email or '—' }}</td>
+              <td><span class="status status-{{
+                'completed' if a.status == 'approved' else
+                'returned' if a.status in ('rejected','referred') else 'in_progress' }}">{{ a.status }}</span></td>
+              <td>{{ a.decision or '—' }}</td>
+              <td>{{ (a.decided_at or '')[:16].replace('T',' ') or '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="intro">No approval rows recorded.</p>
+    {% endif %}
+
+    <h3>Captured details</h3>
+    {% for s in active %}
+      <h4 style="margin-bottom:4px">{{ s.title }}</h4>
+      <dl>
+        {% for f in s.fields if f.type != 'hidden' %}
+          <dt>{{ f.label }}</dt>
+          <dd>{{ answers.get(f.name, '') or '—' }}</dd>
+        {% endfor %}
+      </dl>
+    {% endfor %}
+
+    <div class="actions">
+      <a class="btn secondary" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

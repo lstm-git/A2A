@@ -163,11 +163,37 @@ def record_decision(token: str, status: str, decision: str,
             (status, decision, comments, now, token))
 
 
+def cancel_pending_approvals(request_id: int) -> None:
+    """Stand down any still-pending approvals for a request (used when it is
+    rejected/returned, so siblings stop appearing as actionable)."""
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE a2a_approvals SET status = 'cancelled' "
+            "WHERE request_id = ? AND status = 'pending'", (request_id,))
+
+
 def mark_notified(approval_id: int) -> None:
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     with get_db() as conn:
         conn.execute("UPDATE a2a_approvals SET notified_at = ? WHERE id = ?",
                      (now, approval_id))
+
+
+def list_pending_approvals(email: str = "") -> list[dict]:
+    """Pending approvals across all requests (for 'Pending my approval'),
+    joined to their request. Optionally filter to one approver's mailbox."""
+    sql = (
+        "SELECT a.id, a.token, a.role, a.phase, a.approver_email, "
+        "       r.ref, r.purpose, r.requester, r.created_at "
+        "FROM a2a_approvals a JOIN a2a_requests r ON r.id = a.request_id "
+        "WHERE a.status = 'pending'")
+    params: tuple = ()
+    if email:
+        sql += " AND lower(a.approver_email) = lower(?)"
+        params = (email,)
+    sql += " ORDER BY r.id DESC, a.id"
+    with get_db() as conn:
+        return [dict(r) for r in conn.execute(sql, params).fetchall()]
 
 
 def phase_status(request_id: int, phase: str) -> dict:

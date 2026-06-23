@@ -96,9 +96,11 @@ def record(token: str, decision: str, comments: str, url_for_token) -> dict:
     result["status"] = status
 
     if status != "approved":
-        # Reject / refer-back: return to the previous step, email an explanation.
+        # Reject / refer-back: return to the previous step, email an explanation,
+        # and stand down the other approvers still pending on this request.
         returned_to = _previous_label(answers, a["phase"])
         dbstore.set_request_status(rec["id"], "Returned")
+        dbstore.cancel_pending_approvals(rec["id"])
         notify.send_email(
             PLACEHOLDER_EMAIL,
             f"A2A {rec['ref']} — {decision} by {a['role']}",

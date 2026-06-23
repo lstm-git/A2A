@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+  <section class="card">
+    <h2 style="margin-top:0">Pending approvals</h2>
+    <p class="intro">
+      {% if email %}Open approvals for <strong>{{ email }}</strong>.
+      {% else %}All open approvals across every A2A.{% endif %}
+    </p>
+
+    <form method="get" class="a2a-form" style="margin-bottom:16px">
+      <div class="form-row">
+        <label>Filter by approver email</label>
+        <div class="control">
+          <input type="text" name="email" value="{{ email }}"
+                 placeholder="name@lstmed.ac.uk">
+        </div>
+      </div>
+      <button class="btn small" type="submit">Filter</button>
+    </form>
+
+    {% if rows %}
+      <table class="grid">
+        <thead>
+          <tr><th>Reference</th><th>Type</th><th>Role</th><th>Phase</th>
+              <th>Approver</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td><strong>{{ r.ref }}</strong></td>
+              <td>{{ r.purpose or '—' }}</td>
+              <td>{{ r.role }}</td>
+              <td>{{ r.phase }}</td>
+              <td>{{ r.approver_email or '—' }}</td>
+              <td><a class="btn small" href="{{ url_for('approve', token=r.token) }}">Review</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="intro">Nothing pending.</p>
+    {% endif %}
+
+    <div class="actions">
+      <a class="btn secondary" href="{{ url_for('dashboard') }}">Back to dashboard</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

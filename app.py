@@ -222,6 +222,55 @@ def submitted(ref):
     return render_template("submitted.html", record=record)
 
 
+# ---------------------------------------------------------------------------
+# Phase 4 — dashboards
+# ---------------------------------------------------------------------------
+def _bucket(status: str) -> str:
+    """Group a request status into a dashboard bucket."""
+    if status == "Approved":
+        return "completed"
+    if status == "Returned":
+        return "returned"
+    return "in_progress"
+
+
+@app.route("/dashboard")
+def dashboard():
+    """A2A list with status buckets. ?view=all|in_progress|completed|returned."""
+    view = request.args.get("view", "all")
+    rows = dbstore.list_requests()
+    for r in rows:
+        r["bucket"] = _bucket(r["status"])
+    counts = {b: sum(1 for r in rows if r["bucket"] == b)
+              for b in ("in_progress", "completed", "returned")}
+    counts["all"] = len(rows)
+    shown = rows if view == "all" else [r for r in rows if r["bucket"] == view]
+    return render_template("dashboard.html", rows=shown, counts=counts,
+                           view=view)
+
+
+@app.route("/a2a/<ref>")
+def a2a_detail(ref):
+    """One A2A: the captured answers plus live approval progress."""
+    record = dbstore.get_request(ref)
+    if record is None:
+        return redirect(url_for("dashboard"))
+    answers = record["answers"]
+    active = step_engine.active_steps(answers)
+    approval_rows = dbstore.list_approvals(record["id"])
+    return render_template("a2a_detail.html", record=record, answers=answers,
+                           active=active, approvals=approval_rows,
+                           phases=step_engine.PHASES)
+
+
+@app.route("/pending")
+def pending():
+    """'Pending my approval' — open approvals, optionally filtered by ?email=."""
+    email = request.args.get("email", "").strip()
+    rows = dbstore.list_pending_approvals(email)
+    return render_template("pending.html", rows=rows, email=email)
+
+
 if __name__ == "__main__":
     host = os.environ.get("HOST", "127.0.0.1")
     port = int(os.environ.get("PORT", 8091))

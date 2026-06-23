@@ -15,12 +15,14 @@
     </dl>
 
     <p class="field-hint">
-      Approval routing, notifications and the generated document will follow in the
-      next phases of this workflow.
+      The first approvers have been notified. You can track progress on the A2A
+      record below.
     </p>
 
     <div class="actions">
-      <a class="btn" href="{{ url_for('index') }}">Start new A2A</a>
+      <a class="btn" href="{{ url_for('a2a_detail', ref=record.ref) }}">View this A2A</a>
+      <a class="btn secondary" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn secondary" href="{{ url_for('index') }}">Start new A2A</a>
     </div>
   </section>
 </div>

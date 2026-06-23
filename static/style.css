@@ -32,6 +32,11 @@ header {
   padding: 1rem 1.5rem;
 }
 header h1 { margin: 0; font-size: 1.15rem; font-weight: 600; letter-spacing: .2px; }
+.app-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.app-nav { display: flex; gap: 1.1rem; }
+.app-nav a { color: rgba(255,255,255,.85); text-decoration: none; font-size: .9rem;
+  font-weight: 600; }
+.app-nav a:hover { color: #fff; }
 
 main { padding: 1.75rem 1rem; }
 
@@ -397,10 +402,40 @@ dl { margin: 0 0 1rem; }
 dt { font-weight: 600; }
 dd { margin: 0 0 .5rem; color: #3e4c59; }
 
+/* ---------- Dashboard (Phase 4) ---------- */
+.btn.small { padding: .35rem .8rem; font-size: .8rem; border-radius: 6px; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: .25rem 0 1.25rem;
+  border-bottom: 1px solid var(--line); }
+.tab { padding: .5rem .9rem; text-decoration: none; color: var(--muted);
+  font-weight: 600; font-size: .9rem; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; }
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+.tab-count { display: inline-block; min-width: 1.2rem; text-align: center;
+  background: #eef2f6; color: #475569; border-radius: 999px; padding: 0 .4rem;
+  font-size: .75rem; margin-left: .2rem; }
+
+table.grid { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+table.grid th, table.grid td { text-align: left; padding: .55rem .6rem;
+  border-bottom: 1px solid var(--line); font-size: .9rem; vertical-align: middle; }
+table.grid th { color: var(--muted); font-size: .72rem; text-transform: uppercase;
+  letter-spacing: .04em; }
+table.grid tbody tr:hover { background: #f8fafc; }
+
+.status { display: inline-block; padding: .15rem .55rem; border-radius: 999px;
+  font-size: .75rem; font-weight: 600; }
+.status-in_progress { background: var(--info-soft); color: var(--info); }
+.status-completed { background: var(--teal-soft); color: var(--teal-dark);
+  border: 1px solid var(--teal-border); }
+.status-returned { background: var(--note-soft); color: var(--note);
+  border: 1px solid var(--note-border); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
   .guidance-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; gap: .35rem; align-items: start; }
   .layout { flex-direction: column; }
   .steps { flex: 1; width: 100%; }
+  table.grid th:nth-child(3), table.grid td:nth-child(3) { display: none; }
 }
