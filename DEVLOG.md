@@ -456,7 +456,7 @@
 - "Completed A2As" — the dashboard/list view (Phase 4).
 - Validation (required fields), authentication (full SSO optional, post-v1).
 
-## 2026-06-22 — Funding "add another" gate made cumulative
+## 2026-06-23 — Funding "add another" gate made cumulative
 - **Flow review vs Danny's intended order** — confirmed the wizard + stage chain
   match (Purpose → Type → Funding 1 → Line → Finance 1 → Head of Mgmt Accounting
   → HR Sign-off → HR Processing). Danny confirmed **Director/HoD and Head of RMS
@@ -478,7 +478,7 @@
   100 on source 1→no 2nd; 70→offered; empty current %→hidden. data-show-lt
   renders the reduced threshold (e.g. 40.0 when source 1 = 60%).
 
-## 2026-06-22 — Finance Approval stages made %-driven
+## 2026-06-23 — Finance Approval stages made %-driven
 - **Rule (Danny):** if Source of Funding 1 != 100% a second Finance Approval is
   needed; generalised to Finance Approval n appearing while sources 1..n-1 don't
   yet total 100%.
@@ -494,7 +494,7 @@
 - **Verified** via `stage_steps`: s1=100→_1; s1=60→_1,_2; s1=60,s2=40→_1,_2;
   s1=50,s2=30→_1,_2,_3; +s3=20→_1,_2,_3; empty→_1.
 
-## 2026-06-22 — Funding unified to %-driven + 100% validation
+## 2026-06-23 — Funding unified to %-driven + 100% validation
 - **Unify (Danny):** dropped the "Do you need to add an additional funding
   source?" Yes/No. Source of Funding n now appears via the same `funding_needed(n)`
   rule its Finance Approval uses — a single percentage-driven gate for both the
